@@ -1,0 +1,21 @@
+# .NET build outputs
+**/bin/
+**/obj/
+
+# IDE and user-specific state
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Local logs and secrets
+*.log
+.env
+.env.*
+!.env.example
+
+# OS metadata
+Thumbs.db
+.DS_Store

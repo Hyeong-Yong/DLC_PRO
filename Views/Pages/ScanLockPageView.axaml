@@ -1,0 +1,214 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:pages="using:DLC_PRO.ViewModels.Pages"
+             xmlns:vm="using:DLC_PRO.ViewModels"
+             xmlns:m="using:DLC_PRO.Models"
+             xmlns:conv="using:DLC_PRO.Converters"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+             x:Class="DLC_PRO.Views.Pages.ScanLockPageView"
+             x:DataType="pages:ScanLockPageViewModel"
+             Foreground="{DynamicResource PrimaryForeground}">
+    <Grid RowDefinitions="Auto, *" ColumnDefinitions="*, 470">
+        <!-- 페이지 헤더 -->
+        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="{DynamicResource PagePaddingFirst}" Spacing="2">
+            <TextBlock Classes="page-title" Text="{Binding Title}" />
+            <TextBlock Classes="page-subtitle" Text="{Binding Subtitle}" />
+        </StackPanel>
+
+        <!-- ===== 왼쪽: 스코프 ===== -->
+        <Grid Grid.Row="1" Grid.Column="0" RowDefinitions="Auto, *" Margin="28 0 12 20">
+            <!-- 스코프 툴바 -->
+            <WrapPanel Orientation="Horizontal" ItemSpacing="14" LineSpacing="8" Margin="0 0 0 10">
+                <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Classes="row-label" Text="모드" /><ComboBox Width="150" Classes="param" ItemsSource="{Binding ScopeVariant.Items}" SelectedItem="{Binding ScopeVariant.SelectedItem}" IsEnabled="{Binding ScopeVariant.IsAvailable}"><ComboBox.ItemTemplate><DataTemplate DataType="m:ChoiceItem"><TextBlock Text="{Binding Text}" /></DataTemplate></ComboBox.ItemTemplate></ComboBox></StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Classes="row-label" Text="CH1" /><ComboBox Width="190" Classes="param" ItemsSource="{Binding ScopeCh1.Items}" SelectedItem="{Binding ScopeCh1.SelectedItem}" IsEnabled="{Binding ScopeCh1.IsAvailable}"><ComboBox.ItemTemplate><DataTemplate DataType="m:ChoiceItem"><TextBlock Text="{Binding Text}" /></DataTemplate></ComboBox.ItemTemplate></ComboBox></StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Classes="row-label" Text="CH2" /><ComboBox Width="190" Classes="param" ItemsSource="{Binding ScopeCh2.Items}" SelectedItem="{Binding ScopeCh2.SelectedItem}" IsEnabled="{Binding ScopeCh2.IsAvailable}"><ComboBox.ItemTemplate><DataTemplate DataType="m:ChoiceItem"><TextBlock Text="{Binding Text}" /></DataTemplate></ComboBox.ItemTemplate></ComboBox></StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Classes="row-label" Text="X" /><ComboBox Width="190" Classes="param" ItemsSource="{Binding ScopeX.Items}" SelectedItem="{Binding ScopeX.SelectedItem}" IsEnabled="{Binding ScopeX.IsAvailable}"><ComboBox.ItemTemplate><DataTemplate DataType="m:ChoiceItem"><TextBlock Text="{Binding Text}" /></DataTemplate></ComboBox.ItemTemplate></ComboBox></StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Classes="row-label" Text="갱신" />
+                    <ParamNumericUpDown Width="150" CommittedValue="{Binding ScopeRate.Value}" FormatString="{Binding ScopeRate.FormatString}" Increment="{Binding ScopeRate.Increment}" IsEnabled="{Binding ScopeRate.IsAvailable}" />
+                    <TextBlock Classes="unit" Text="Hz" />
+                </StackPanel>
+                <CheckBox Content="화면 정지" IsChecked="{Binding Freeze}" />
+                <CheckBox Content="X축 MHz" IsChecked="{Binding ShowMhz}" />
+                <Button Classes="small outline" Content="자동 스케일" Command="{Binding ResetScaleCommand}" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Ellipse Classes="led" Classes.lit="{Binding LockLed, Converter={x:Static conv:LedIsLitConverter.Instance}}" Fill="{Binding LockLed, Converter={x:Static conv:LedBrushConverter.Instance}}" />
+                    <TextBlock Text="{Binding LockStateText}" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"
+                               Foreground="{DynamicResource LightForeground}" Classes.locked="{Binding IsLocked}" />
+                </StackPanel>
+            </WrapPanel>
+            <!-- 그래프: 한 번 클릭 = 락 포인트 선택, 더블클릭 = 자동 스케일 -->
+            <PlotView Grid.Row="1" Model="{Binding Plot}" ClickCommand="{Binding SelectLockpointCommand}" />
+        </Grid>
+
+        <!-- ===== 오른쪽: 설정 탭 ===== -->
+        <TabControl Grid.Row="1" Grid.Column="1" Margin="0 0 20 20" Padding="0">
+                <TabItem Header="Lock">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="0 12 8 0" Classes="cards">
+                            <Card Header="Lock (click-and-lock)" IconText="&#xe2fa;">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Classes="hint" Text="① 스캔 ON  ② 그래프에서 원하는 피크/엣지 근처를 클릭  ③ LOCK   (락 후보 ▲▼◆, 선택된 락 포인트는 녹색 원)" />
+                                    <ContentControl Content="{Binding LockType}" />
+                                    <ContentControl Content="{Binding LockInput}" />
+                                    <ContentControl Content="{Binding PidSelection}" />
+                                    <ContentControl Content="{Binding WithoutLockpoint}" />
+                                    <ContentControl Content="{Binding LockingDelay}" />
+                                    <ContentControl Content="{Binding Setpoint}" />
+                                    <ContentControl Content="{Binding Lockpoint}" />
+                                    <ContentControl Content="{Binding LockpointMhz}" />
+                                    <ContentControl Content="{Binding LockpointType}" />
+                                    <ContentControl Content="{Binding LockStateRow}" />
+                                    <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8"><IconButton Classes="small outline" IconText="&#xe30c;" Content="후보 찾기" Command="{Binding FindCandidatesCommand}" /><IconButton Classes="small success" IconText="&#xe2fa;" Content="LOCK" Command="{Binding LockCommand}" /><IconButton Classes="small alert" IconText="&#xe306;" Content="UNLOCK" Command="{Binding UnlockCommand}" /></WrapPanel>
+                                    <ContentControl Content="{Binding LockHold}" />
+                                </StackPanel>
+                            </Card>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+                <TabItem Header="Scan">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="0 12 8 0" Classes="cards">
+                            <Card Header="Scan Generator" IconText="&#xea9a;">
+                                <Card.HeaderRight>
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <ContentControl Content="{Binding ScanEnable}" />
+                                    </StackPanel>
+                                </Card.HeaderRight>
+                                <StackPanel Spacing="8">
+                                    <ContentControl Content="{Binding ScanHold}" />
+                                    <ContentControl Content="{Binding ScanSignalType}" />
+                                    <ContentControl Content="{Binding ScanOutput}" />
+                                    <ContentControl Content="{Binding ScanFrequency}" />
+                                    <ContentControl Content="{Binding ScanAmplitude}" />
+                                    <ContentControl Content="{Binding ScanOffset}" />
+                                    <ContentControl Content="{Binding ScanStart}" />
+                                    <ContentControl Content="{Binding ScanEnd}" />
+                                </StackPanel>
+                            </Card>
+                            <Card Header="Scope (표시)" IconText="&#xe154;">
+                                <StackPanel Spacing="8">
+                                    <ContentControl Content="{Binding ScopeTimescale}" />
+                                    <ContentControl Content="{Binding ScopeSpectrumRange}" />
+                                </StackPanel>
+                            </Card>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+                <TabItem Header="MHz 축">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="0 12 8 0" Classes="cards">
+                            <Card Header="주파수 축 (Piezo V → 상대 주파수 MHz)" IconText="&#xe154;">
+                                <StackPanel Spacing="8">
+                                    <CheckBox Content="그래프 X축을 상대 주파수(MHz)로 표시" IsChecked="{Binding FreqAxis.ShowFrequency}" />
+                                    <Grid ColumnDefinitions="Auto,*,Auto"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="튜닝 계수" Margin="0 0 12 0" /><NumericUpDown Grid.Column="1" Classes="compact" FormatString="F5" Increment="0.001" Minimum="-1000" Maximum="1000" Value="{Binding FreqAxis.Coefficient}" /><TextBlock Grid.Column="2" Classes="unit" Text="GHz/V" /></Grid>
+                                    <RadioButton GroupName="{Binding FreqAxis.CenterName}" Content="{Binding FreqAxis.ZeroCenterText}" IsChecked="{Binding FreqAxis.UseCenterZero}" />
+                                    <RadioButton GroupName="{Binding FreqAxis.CenterName}" Content="사용자 지정 전압 = 0 MHz" IsChecked="{Binding FreqAxis.UseCustomZero}" />
+                                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="기준 전압 (0 MHz)" Margin="0 0 12 0" /><NumericUpDown Grid.Column="1" Classes="compact" FormatString="F4" Increment="0.01" Minimum="-1000" Maximum="1000" Value="{Binding FreqAxis.ZeroVoltage}" IsEnabled="{Binding FreqAxis.UseCustomZero}" /><TextBlock Grid.Column="2" Classes="unit" Text="V" /></Grid>
+                                    <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8"><Button Classes="small outline" Content="현재 스캔 중심 → 기준" Command="{Binding FreqAxis.CenterToZeroCommand}" /><Button Classes="small outline" Content="현재 락 포인트 → 기준" Command="{Binding FreqAxis.LockpointToZeroCommand}" IsVisible="{Binding FreqAxis.HasLockpointButton}" /></WrapPanel>
+                                    <TextBlock Classes="info" Text="{Binding FreqAxis.Info}" />
+                                    <TextBlock Classes="hint" Text="계수는 레이저 헤드 사양서의 피에조 튜닝 계수입니다. 전압을 올릴 때 주파수가 내려가면 음수로 입력하세요. 0이면 변환하지 않고 전압(V)으로 표시합니다." />
+                                </StackPanel>
+                            </Card>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+                <TabItem Header="PID 1">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="0 12 8 0" Classes="cards">
+                            <Card Header="PID 1" IconText="&#xe434;">
+                                <Card.HeaderRight>
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <Ellipse Classes="led" ToolTip.Tip="Regulating" Classes.lit="{Binding Pid1.Regulating.Led, Converter={x:Static conv:LedIsLitConverter.Instance}}" Fill="{Binding Pid1.Regulating.Led, Converter={x:Static conv:LedBrushConverter.Instance}}" />
+                                        <ContentControl Content="{Binding Pid1.Enable}" />
+                                    </StackPanel>
+                                </Card.HeaderRight>
+                                <StackPanel Spacing="8">
+                                    <ContentControl Content="{Binding Pid1.OutputChannel}" />
+                                    <ContentControl Content="{Binding Pid1.GainAll}" />
+                                    <ContentControl Content="{Binding Pid1.GainP}" />
+                                    <ContentControl Content="{Binding Pid1.GainI}" />
+                                    <ContentControl Content="{Binding Pid1.GainD}" />
+                                    <ContentControl Content="{Binding Pid1.ICutoffEnabled}" />
+                                    <ContentControl Content="{Binding Pid1.ICutoff}" />
+                                    <WrapPanel ItemSpacing="16"><ContentControl Content="{Binding Pid1.Sign}" /><ContentControl Content="{Binding Pid1.Slope}" /></WrapPanel>
+                                    <ContentControl Content="{Binding Pid1.OutLimitEnabled}" />
+                                    <ContentControl Content="{Binding Pid1.OutLimitMax}" />
+                                    <ContentControl Content="{Binding Pid1.Hold}" />
+                                    <TextBlock Classes="section" Text="상태" />
+                                    <ContentControl Content="{Binding Pid1.InLock}" />
+                                    <ContentControl Content="{Binding Pid1.OnHold}" />
+                                    <ContentControl Content="{Binding Pid1.Regulating}" />
+                                </StackPanel>
+                            </Card>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+                <TabItem Header="PID 2">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="0 12 8 0" Classes="cards">
+                            <Card Header="PID 2" IconText="&#xe434;">
+                                <Card.HeaderRight>
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <Ellipse Classes="led" ToolTip.Tip="Regulating" Classes.lit="{Binding Pid2.Regulating.Led, Converter={x:Static conv:LedIsLitConverter.Instance}}" Fill="{Binding Pid2.Regulating.Led, Converter={x:Static conv:LedBrushConverter.Instance}}" />
+                                        <ContentControl Content="{Binding Pid2.Enable}" />
+                                    </StackPanel>
+                                </Card.HeaderRight>
+                                <StackPanel Spacing="8">
+                                    <ContentControl Content="{Binding Pid2.OutputChannel}" />
+                                    <ContentControl Content="{Binding Pid2.GainAll}" />
+                                    <ContentControl Content="{Binding Pid2.GainP}" />
+                                    <ContentControl Content="{Binding Pid2.GainI}" />
+                                    <ContentControl Content="{Binding Pid2.GainD}" />
+                                    <ContentControl Content="{Binding Pid2.ICutoffEnabled}" />
+                                    <ContentControl Content="{Binding Pid2.ICutoff}" />
+                                    <WrapPanel ItemSpacing="16"><ContentControl Content="{Binding Pid2.Sign}" /><ContentControl Content="{Binding Pid2.Slope}" /></WrapPanel>
+                                    <ContentControl Content="{Binding Pid2.OutLimitEnabled}" />
+                                    <ContentControl Content="{Binding Pid2.OutLimitMax}" />
+                                    <ContentControl Content="{Binding Pid2.Hold}" />
+                                    <TextBlock Classes="section" Text="상태" />
+                                    <ContentControl Content="{Binding Pid2.InLock}" />
+                                    <ContentControl Content="{Binding Pid2.OnHold}" />
+                                    <ContentControl Content="{Binding Pid2.Regulating}" />
+                                </StackPanel>
+                            </Card>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+                <TabItem Header="Lock-In">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="0 12 8 0" Classes="cards">
+                            <Card Header="Lock-In (Top of Fringe용)" IconText="&#xe802;">
+                                <StackPanel Spacing="8">
+                                    <ContentControl Content="{Binding LockinModEnabled}" />
+                                    <ContentControl Content="{Binding LockinModOutput}" />
+                                    <ContentControl Content="{Binding LockinFrequency}" />
+                                    <ContentControl Content="{Binding LockinAmplitude}" />
+                                    <ContentControl Content="{Binding LockinPhase}" />
+                                    <ContentControl Content="{Binding LockinLockLevel}" />
+                                    <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8"><IconButton Classes="small outline" IconText="&#xe3d0;" Content="Auto LIR 시작" Command="{Binding AutoLirStartCommand}" /><IconButton Classes="small outline danger" IconText="&#xe46c;" Content="중단" Command="{Binding AutoLirAbortCommand}" /></WrapPanel>
+                                    <ContentControl Content="{Binding LockinAutoLirProgress}" />
+                                </StackPanel>
+                            </Card>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+                <TabItem Header="Filter">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="0 12 8 0" Classes="cards">
+                            <Card Header="Candidate Filter (락 후보 검출)" IconText="&#xe1d6;">
+                                <StackPanel Spacing="8">
+                                    <WrapPanel ItemSpacing="16"><ContentControl Content="{Binding FilterTop}" /><ContentControl Content="{Binding FilterBottom}" /></WrapPanel>
+                                    <WrapPanel ItemSpacing="16"><ContentControl Content="{Binding FilterPosEdge}" /><ContentControl Content="{Binding FilterNegEdge}" /></WrapPanel>
+                                    <ContentControl Content="{Binding FilterEdgeLevel}" />
+                                    <ContentControl Content="{Binding FilterNoiseTol}" />
+                                </StackPanel>
+                            </Card>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

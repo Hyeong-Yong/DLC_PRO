@@ -1,0 +1,118 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:pages="using:DLC_PRO.ViewModels.Pages"
+             xmlns:vm="using:DLC_PRO.ViewModels"
+             xmlns:m="using:DLC_PRO.Models"
+             xmlns:conv="using:DLC_PRO.Converters"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+             x:Class="DLC_PRO.Views.Pages.RelockPageView"
+             x:DataType="pages:RelockPageViewModel"
+             Foreground="{DynamicResource PrimaryForeground}">
+    <Grid RowDefinitions="Auto, *" ColumnDefinitions="470, *">
+        <!-- 페이지 헤더 -->
+        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="{DynamicResource PagePaddingFirst}" Spacing="2">
+            <TextBlock Classes="page-title" Text="{Binding Title}" />
+            <TextBlock Classes="page-subtitle" Text="{Binding Subtitle}" />
+        </StackPanel>
+
+        <!-- 왼쪽: 설정 카드 -->
+        <ScrollViewer Grid.Row="1" Grid.Column="0" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="28 0 12 20" Classes="cards">
+                <Card Header="ReLock (자동 재잠금)" IconText="&#xe094;">
+                    <Card.HeaderRight>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <ContentControl Content="{Binding RelockEnable}" />
+                        </StackPanel>
+                    </Card.HeaderRight>
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="hint" Text="락이 풀리면(윈도우 조건 이탈) 지정 출력에 스캔 파형을 가해 락 포인트를 다시 찾습니다. Window 설정이 함께 필요합니다." />
+                        <ContentControl Content="{Binding RelockOutput}" />
+                        <ContentControl Content="{Binding RelockFrequency}" />
+                        <ContentControl Content="{Binding RelockAmplitude}" />
+                        <ContentControl Content="{Binding RelockDelay}" />
+                    </StackPanel>
+                </Card>
+                <Card Header="Window (락 상태 감시)" IconText="&#xe220;">
+                    <Card.HeaderRight>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <ContentControl Content="{Binding WindowEnable}" />
+                        </StackPanel>
+                    </Card.HeaderRight>
+                    <StackPanel Spacing="8">
+                        <ContentControl Content="{Binding WindowInput}" />
+                        <ContentControl Content="{Binding WindowHigh}" />
+                        <ContentControl Content="{Binding WindowLow}" />
+                        <ContentControl Content="{Binding WindowHysteresis}" />
+                    </StackPanel>
+                </Card>
+                <Card Header="PID Reset" IconText="&#xe038;">
+                    <Card.HeaderRight>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <ContentControl Content="{Binding ResetEnable}" />
+                        </StackPanel>
+                    </Card.HeaderRight>
+                    <StackPanel Spacing="8">
+                        <ContentControl Content="{Binding Pid1InLock}" />
+                        <ContentControl Content="{Binding Pid1Regulating}" />
+                        <ContentControl Content="{Binding Pid2InLock}" />
+                        <ContentControl Content="{Binding Pid2Regulating}" />
+                        <ContentControl Content="{Binding LockStateRow}" />
+                    </StackPanel>
+                </Card>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 오른쪽 -->
+        <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="Auto, *, Auto" Margin="12 0 28 20">
+            <Card Header="락 이벤트 기록 (프로그램 실행 중 상태 변화)" IconText="&#xe19a;" Grid.Row="0" Margin="0 0 0 12">
+                <Grid ColumnDefinitions="*, *, *, *" ColumnSpacing="12">
+                    <StackPanel>
+                        <TextBlock Classes="row-label" Text="현재 락 유지" />
+                        <TextBlock Classes="readout" TextAlignment="Left" FontSize="20" Text="{Binding CurrentLockText}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Classes="row-label" Text="누적 락 시간" />
+                        <TextBlock Classes="readout" TextAlignment="Left" FontSize="20" Text="{Binding TotalLockText}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Classes="row-label" Text="락 해제 횟수" />
+                        <TextBlock Classes="readout" TextAlignment="Left" FontSize="20" Foreground="{DynamicResource RedAccent}" Text="{Binding Unlocks}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3">
+                        <TextBlock Classes="row-label" Text="ReLock 성공" />
+                        <TextBlock Classes="readout" TextAlignment="Left" FontSize="20" Foreground="{DynamicResource GreenAccent}" Text="{Binding Relocks}" />
+                    </StackPanel>
+                </Grid>
+            </Card>
+            <Border Grid.Row="1" Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="{DynamicResource CornerLg}" Padding="4">
+                <Grid RowDefinitions="Auto, *">
+                    <Grid ColumnDefinitions="170, 100, 100, *" Margin="12 8">
+                        <TextBlock Classes="section" Margin="0" Text="시각" />
+                        <TextBlock Grid.Column="1" Classes="section" Margin="0" Text="이전" />
+                        <TextBlock Grid.Column="2" Classes="section" Margin="0" Text="→ 현재" />
+                        <TextBlock Grid.Column="3" Classes="section" Margin="0" Text="비고" />
+                    </Grid>
+                    <ListBox Grid.Row="1" Classes="log" ItemsSource="{Binding Events}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="m:LockEvent">
+                                <Grid ColumnDefinitions="170, 100, 100, *">
+                                    <TextBlock Text="{Binding TimeText}" Foreground="{DynamicResource SecondaryForeground}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding From}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding To}" Foreground="{Binding Kind, Converter={x:Static conv:LockEventBrushConverter.Instance}}" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Note}" Foreground="{Binding Kind, Converter={x:Static conv:LockEventBrushConverter.Instance}}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+            <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" Margin="0 12 0 0">
+                <IconButton Classes="small outline" IconText="&#xe248;" Content="기록 CSV 저장" Command="{Binding SaveEventsCommand}" />
+                <IconButton Classes="small outline alert" IconText="&#xec54;" Content="기록 지우기" Command="{Binding ClearEventsCommand}" />
+                <TextBlock Classes="hint" VerticalAlignment="Center" Text="{Binding SessionStartText, StringFormat='기록 시작 {0}'}" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

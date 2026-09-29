@@ -1,0 +1,54 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:pages="using:DLC_PRO.ViewModels.Pages"
+             xmlns:vm="using:DLC_PRO.ViewModels"
+             xmlns:m="using:DLC_PRO.Models"
+             xmlns:conv="using:DLC_PRO.Converters"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+             x:Class="DLC_PRO.Views.Pages.SystemPageView"
+             x:DataType="pages:SystemPageViewModel"
+             Foreground="{DynamicResource PrimaryForeground}">
+    <Grid RowDefinitions="Auto, *" ColumnDefinitions="470, *">
+        <!-- 페이지 헤더 -->
+        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="{DynamicResource PagePaddingFirst}" Spacing="2">
+            <TextBlock Classes="page-title" Text="{Binding Title}" />
+            <TextBlock Classes="page-subtitle" Text="{Binding Subtitle}" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" Grid.Column="0" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="28 0 12 20" Classes="cards">
+                <Card Header="장비 정보" IconText="&#xe610;">
+                    <ItemsControl ItemsSource="{Binding Info}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Spacing="8" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </Card>
+                <Card Header="User Level (권한)" IconText="&#xe2fe;">
+                    <StackPanel Spacing="8">
+                        <ContentControl Content="{Binding UserLevel}" />
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="변경할 레벨" Margin="0 0 12 0" /><ComboBox Grid.Column="1" Classes="param" ItemsSource="{Binding Levels}" SelectedItem="{Binding SelectedLevel}"><ComboBox.ItemTemplate><DataTemplate DataType="m:ChoiceItem"><TextBlock Text="{Binding Text}" /></DataTemplate></ComboBox.ItemTemplate></ComboBox></Grid>
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="비밀번호" Margin="0 0 12 0" /><TextBox Grid.Column="1" PasswordChar="●" Text="{Binding Password}" /></Grid>
+                        <IconButton Classes="small" IconText="&#xe2fe;" Content="레벨 변경" Command="{Binding ChangeLevelCommand}" />
+                        <TextBlock Classes="hint" Text="normal(3) 비밀번호 기본값은 빈 문자열입니다. 대부분의 파라미터는 normal에서 읽기 가능합니다." />
+                    </StackPanel>
+                </Card>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="Auto, *" Margin="12 0 28 20">
+            <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8" Margin="0 0 0 10">
+                <TextBlock Classes="section" Margin="0 0 8 0" VerticalAlignment="Center" Text="시스템 메시지" />
+                <Button Classes="small outline" Content="새 메시지" Command="{Binding ShowNewCommand}" />
+                <Button Classes="small outline" Content="전체 메시지" Command="{Binding ShowAllCommand}" />
+                <Button Classes="small outline" Content="로그" Command="{Binding ShowLogCommand}" />
+                <Button Classes="small outline" Content="Persistent" Command="{Binding ShowPersistentCommand}" />
+            </WrapPanel>
+            <TextBox Grid.Row="1" Classes="console" Text="{Binding Messages}" />
+        </Grid>
+    </Grid>
+</UserControl>

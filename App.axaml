@@ -1,0 +1,366 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="DLC_PRO.App"
+             xmlns:local="using:DLC_PRO"
+             xmlns:p="using:DLC_PRO.ViewModels.Params"
+             xmlns:m="using:DLC_PRO.Models"
+             xmlns:conv="using:DLC_PRO.Converters"
+             RequestedThemeVariant="Dark">
+    <!-- UI 디자인 시스템은 Avalonia BatchProcess(BatchProcess3)의 App.axaml을 그대로 따른다 (다크 네이비 테마) -->
+
+    <Application.DataTemplates>
+        <!-- PageViewModel / DialogViewModel → View -->
+        <local:ViewLocator />
+
+        <!--
+            파라미터 행 ViewModel → 화면 모양 (라벨 | 값 | 단위).
+            페이지 View에서는 <ContentControl Content="{Binding CcCurrentSet}" /> 만 쓰면 된다.
+            열 폭(라벨/단위)은 Card 안에서 SharedSizeGroup으로 맞춰진다.
+        -->
+        <!-- 숫자 입력: 라벨 | ParamNumericUpDown | 단위 -->
+        <DataTemplate DataType="p:NumberParamViewModel">
+            <Grid ToolTip.Tip="{Binding ToolTip}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Classes="row-label" Text="{Binding Label}" Margin="0 0 12 0" />
+                <ParamNumericUpDown Grid.Column="1"
+                                    CommittedValue="{Binding Value}"
+                                    FormatString="{Binding FormatString}"
+                                    Increment="{Binding Increment}"
+                                    Minimum="{Binding Minimum}"
+                                    Maximum="{Binding Maximum}"
+                                    AllowWheel="{Binding AllowWheel}"
+                                    IsEnabled="{Binding IsAvailable}" />
+                <TextBlock Grid.Column="2" Classes="unit" Text="{Binding Unit}" />
+            </Grid>
+        </DataTemplate>
+
+        <!-- 읽기 전용 값 (장비 파라미터 / 계산 값): 라벨 | 값 | 단위 -->
+        <DataTemplate DataType="p:ReadoutRowViewModel">
+            <Grid ToolTip.Tip="{Binding ToolTip}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Classes="row-label" Text="{Binding Label}" Margin="0 0 12 0" />
+                <Border Grid.Column="1" Classes="readout">
+                    <TextBlock Classes="readout" Classes.alert="{Binding IsAlert}" Text="{Binding Text}" />
+                </Border>
+                <TextBlock Grid.Column="2" Classes="unit" Text="{Binding Unit}" />
+            </Grid>
+        </DataTemplate>
+
+        <!-- 콤보: 라벨 | ComboBox -->
+        <DataTemplate DataType="p:ChoiceParamViewModel">
+            <Grid ToolTip.Tip="{Binding ToolTip}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Classes="row-label" Text="{Binding Label}" Margin="0 0 12 0" />
+                <ComboBox Grid.Column="1"
+                          Classes="param"
+                          ItemsSource="{Binding Items}"
+                          SelectedItem="{Binding SelectedItem}"
+                          IsEnabled="{Binding IsAvailable}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate DataType="m:ChoiceItem">
+                            <TextBlock Text="{Binding Text}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </Grid>
+        </DataTemplate>
+
+        <!-- 옵션 체크박스 -->
+        <DataTemplate DataType="p:CheckParamViewModel">
+            <CheckBox Content="{Binding Label}"
+                      IsChecked="{Binding IsChecked}"
+                      IsEnabled="{Binding IsAvailable}"
+                      ToolTip.Tip="{Binding ToolTip}" />
+        </DataTemplate>
+
+        <!-- Enable 토글 버튼 (켜짐 = 녹색 그라디언트, 꺼짐 = 외곽선) -->
+        <DataTemplate DataType="p:ToggleParamViewModel">
+            <Button Classes="small toggle"
+                    Classes.success="{Binding IsOn}"
+                    Classes.outline="{Binding !IsOn}"
+                    Command="{Binding ToggleCommand}"
+                    ToolTip.Tip="{Binding ToolTip}">
+                <TextBlock Text="{Binding ButtonText}" HorizontalAlignment="Center" />
+            </Button>
+        </DataTemplate>
+
+        <!-- 표시등 행: 라벨 | LED -->
+        <DataTemplate DataType="p:LedRowViewModel">
+            <Grid ToolTip.Tip="{Binding ToolTip}" MinHeight="24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Classes="row-label" Text="{Binding Label}" Margin="0 0 12 0" />
+                <Ellipse Grid.Column="1"
+                         Classes="led"
+                         HorizontalAlignment="Left"
+                         Classes.lit="{Binding Led, Converter={x:Static conv:LedIsLitConverter.Instance}}"
+                         Fill="{Binding Led, Converter={x:Static conv:LedBrushConverter.Instance}}" />
+            </Grid>
+        </DataTemplate>
+    </Application.DataTemplates>
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://DLC_PRO/Styles/Labels.axaml" />
+        <StyleInclude Source="avares://DLC_PRO/Styles/ListBox.axaml" />
+        <StyleInclude Source="avares://DLC_PRO/Styles/TextBlock.axaml" />
+        <StyleInclude Source="avares://DLC_PRO/Styles/TextBox.axaml" />
+        <StyleInclude Source="avares://DLC_PRO/Styles/General.axaml" />
+        <StyleInclude Source="avares://DLC_PRO/Styles/DlcPro.axaml" />
+    </Application.Styles>
+
+    <Application.Resources>
+
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <MergeResourceInclude Source="avares://DLC_PRO/Controls/ButtonSpinner.axaml" />
+                <MergeResourceInclude Source="avares://DLC_PRO/Controls/Button.axaml" />
+                <MergeResourceInclude Source="avares://DLC_PRO/Controls/IconButton.axaml" />
+                <MergeResourceInclude Source="avares://DLC_PRO/Controls/CheckBox.axaml" />
+                <MergeResourceInclude Source="avares://DLC_PRO/Controls/ToggleButton.axaml" />
+                <MergeResourceInclude Source="avares://DLC_PRO/Controls/ComboBox.axaml" />
+                <MergeResourceInclude Source="avares://DLC_PRO/Controls/ComboBoxItem.axaml" />
+                <MergeResourceInclude Source="avares://DLC_PRO/Controls/ListBoxItem.axaml" />
+                <MergeResourceInclude Source="avares://DLC_PRO/Controls/NumericUpDown.axaml" />
+                <MergeResourceInclude Source="avares://DLC_PRO/Controls/TabControl.axaml" />
+                <MergeResourceInclude Source="avares://DLC_PRO/Controls/TabItem.axaml" />
+                <MergeResourceInclude Source="avares://DLC_PRO/Controls/Card.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+             <Thickness x:Key="PrimaryBorderThickness">2</Thickness>
+    
+             <!-- ======================== -->
+             <!--   Spacing Resources      -->
+             <!-- ======================== -->
+    
+             <!-- Uniform (all sides) -->
+             <Thickness x:Key="SpacingXs">4</Thickness>
+             <Thickness x:Key="SpacingSm">8</Thickness>
+             <Thickness x:Key="SpacingMd">16</Thickness>
+             <Thickness x:Key="SpacingLg">28</Thickness>
+    
+             <!-- Horizontal only (left/right) -->
+             <Thickness x:Key="SpacingHSm">8 0</Thickness>
+             <Thickness x:Key="SpacingHMd">16 0</Thickness>
+             <Thickness x:Key="SpacingHLg">28 0</Thickness>
+    
+             <!-- Bottom only -->
+             <Thickness x:Key="SpacingBXs">0 0 0 4</Thickness>
+             <Thickness x:Key="SpacingBMd">0 0 0 16</Thickness>
+    
+             <!-- ============================== -->
+             <!--   Corner Radius Resources     -->
+             <!-- ============================== -->
+    
+             <CornerRadius x:Key="CornerSm">4</CornerRadius>
+             <CornerRadius x:Key="CornerMd">8</CornerRadius>
+             <CornerRadius x:Key="CornerLg">12</CornerRadius>
+             <CornerRadius x:Key="CornerPill">20</CornerRadius>
+    
+             <!-- Page content layout (sides 28, varying top/bottom) -->
+             <Thickness x:Key="PagePaddingFirst">28 28 28 16</Thickness>
+             <Thickness x:Key="PagePaddingMiddle">28 0 28 16</Thickness>
+             <Thickness x:Key="PagePaddingLast">28 0 28 28</Thickness>
+    
+    
+             <!--   Color Resources    -->
+    
+    
+             <!-- Primary Colors -->
+             <Color x:Key="PrimaryBackgroundColor1">#111214</Color>
+             <Color x:Key="PrimaryBackgroundColor2">#151E3E</Color>
+    
+             <!-- Card/Layout Colors -->
+             <Color x:Key="CardBackgroundColor">#181b2e</Color>
+             <Color x:Key="CardBorderColor">#232640</Color>
+             <Color x:Key="CardBorderSubtleColor">#2e3252</Color>
+             <Color x:Key="HoverBackgroundColor">#1e2238</Color>
+             <Color x:Key="TableHeaderBackgroundColor">#131625</Color>
+             <Color x:Key="DialogOverlayColor">#000000</Color>
+    
+             <!-- Text Colors -->
+             <Color x:Key="LabelForegroundColor">#4a5080</Color>
+             <Color x:Key="SecondaryForegroundColor">#7b82a8</Color>
+             <Color x:Key="LightForegroundColor">#e8eaf6</Color>
+             <Color x:Key="AccentPurpleColor">#c084fc</Color>
+    
+             <!-- Accent Colors -->
+             <Color x:Key="CyanColor">#06b6d4</Color>
+             <Color x:Key="CyanLightColor">#0ea5e9</Color>
+             <Color x:Key="FuchsiaColor">#c026d3</Color>
+             <Color x:Key="FuchsiaLightColor">#e879f9</Color>
+             <Color x:Key="GreenColor">#22c55e</Color>
+             <Color x:Key="GreenDarkColor">#16a34a</Color>
+             <Color x:Key="RedColor">#ef4444</Color>
+             <Color x:Key="RedDarkColor">#dc2626</Color>
+             <Color x:Key="AmberColor">#f59e0b</Color>
+    
+             <!-- Existing Gradient Stop Colors -->
+             <Color x:Key="DefaultGradientStopColor">#333B5A</Color>
+             <Color x:Key="ActiveTextStopColor">#7C59CD</Color>
+             <Color x:Key="ActiveGradientColor1">#6633DD</Color>
+             <Color x:Key="ActiveGradientColor2">#431B9F</Color>
+             <Color x:Key="HoverGradientColor1">#00ffff</Color>
+             <Color x:Key="HoverGradientColor2">#ff00ff</Color>
+             <Color x:Key="SuccessGradientColor1">#00ff00</Color>
+             <Color x:Key="SuccessGradientColor2">#009900</Color>
+             <Color x:Key="SuccessHoverGradientColor1">#44ff44</Color>
+             <Color x:Key="SuccessHoverGradientColor2">#55cc55</Color>
+             <Color x:Key="AlertGradientColor1">#ffff00</Color>
+             <Color x:Key="AlertGradientColor2">#ff8800</Color>
+             <Color x:Key="DangerGradientColor1">#ff0000</Color>
+             <Color x:Key="DangerGradientColor2">#aa0000</Color>
+             <Color x:Key="DangerHoverGradientColor1">#ff4444</Color>
+             <Color x:Key="DangerHoverGradientColor2">#bb1111</Color>
+    
+             <!-- ============================== -->
+             <!--   SolidColorBrush Resources    -->
+             <!-- ============================== -->
+    
+             <!-- Primary Brushes -->
+             <SolidColorBrush x:Key="PrimaryForeground">#CFCFCF</SolidColorBrush>
+             <SolidColorBrush x:Key="PrimaryForegroundSubtle">#aaa</SolidColorBrush>
+             <SolidColorBrush x:Key="PrimaryBackground">#14172D</SolidColorBrush>
+             <SolidColorBrush x:Key="PrimaryHoverBackground" Color="{DynamicResource DefaultGradientStopColor}" />
+             <SolidColorBrush x:Key="PrimaryHoverForeground">White</SolidColorBrush>
+    
+             <!-- Card/Layout Brushes -->
+             <SolidColorBrush x:Key="CardBackground" Color="{DynamicResource CardBackgroundColor}" />
+             <SolidColorBrush x:Key="CardBorder" Color="{DynamicResource CardBorderColor}" />
+             <SolidColorBrush x:Key="CardBorderSubtle" Color="{DynamicResource CardBorderSubtleColor}" />
+             <SolidColorBrush x:Key="HoverBackground" Color="{DynamicResource HoverBackgroundColor}" />
+             <SolidColorBrush x:Key="TableHeaderBackground" Color="{DynamicResource TableHeaderBackgroundColor}" />
+             <SolidColorBrush x:Key="DialogOverlay" Color="{DynamicResource DialogOverlayColor}" />
+    
+             <!-- Text Brushes -->
+             <SolidColorBrush x:Key="LabelForeground" Color="{DynamicResource LabelForegroundColor}" />
+             <SolidColorBrush x:Key="SecondaryForeground" Color="{DynamicResource SecondaryForegroundColor}" />
+             <SolidColorBrush x:Key="LightForeground" Color="{DynamicResource LightForegroundColor}" />
+             <SolidColorBrush x:Key="AccentPurple" Color="{DynamicResource AccentPurpleColor}" />
+    
+             <!-- Accent Brushes -->
+             <SolidColorBrush x:Key="CyanAccent" Color="{DynamicResource CyanColor}" />
+             <SolidColorBrush x:Key="FuchsiaAccent" Color="{DynamicResource FuchsiaColor}" />
+             <SolidColorBrush x:Key="GreenAccent" Color="{DynamicResource GreenColor}" />
+             <SolidColorBrush x:Key="RedAccent" Color="{DynamicResource RedColor}" />
+             <SolidColorBrush x:Key="AmberAccent" Color="{DynamicResource AmberColor}" />
+    
+             <!-- ================================ -->
+             <!--   LinearGradientBrush Resources  -->
+             <!-- ================================ -->
+    
+             <LinearGradientBrush x:Key="PrimaryBackgroundGradient" StartPoint="0%, 0%" EndPoint="100%, 0%">
+                 <GradientStop Offset="0" Color="{DynamicResource PrimaryBackgroundColor1}"></GradientStop>
+                 <GradientStop Offset="1" Color="{DynamicResource PrimaryBackgroundColor2}"></GradientStop>
+             </LinearGradientBrush>
+    
+             <LinearGradientBrush x:Key="DefaultGradient" StartPoint="0%, 0%" EndPoint="100%, 0%">
+                 <GradientStop Offset="0" Color="{DynamicResource DefaultGradientStopColor}"></GradientStop>
+                 <GradientStop Offset="1" Color="{DynamicResource DefaultGradientStopColor}"></GradientStop>
+             </LinearGradientBrush>
+    
+             <LinearGradientBrush x:Key="ActiveGradientText" StartPoint="0%, 0%" EndPoint="100%, 0%">
+                 <GradientStop Offset="0" Color="{DynamicResource ActiveTextStopColor}"></GradientStop>
+                 <GradientStop Offset="1" Color="{DynamicResource ActiveTextStopColor}"></GradientStop>
+             </LinearGradientBrush>
+    
+             <LinearGradientBrush x:Key="ActiveGradient" StartPoint="0%, 0%" EndPoint="100%, 0%">
+                 <GradientStop Offset="0" Color="{DynamicResource ActiveGradientColor1}"></GradientStop>
+                 <GradientStop Offset="1" Color="{DynamicResource ActiveGradientColor2}"></GradientStop>
+             </LinearGradientBrush>
+    
+             <LinearGradientBrush x:Key="ActiveHoverGradient" StartPoint="0%, 0%" EndPoint="100%, 0%">
+                 <GradientStop Offset="0" Color="{DynamicResource ActiveGradientColor1}"></GradientStop>
+                 <GradientStop Offset="1" Color="{DynamicResource ActiveGradientColor1}"></GradientStop>
+             </LinearGradientBrush>
+    
+             <LinearGradientBrush x:Key="HoverGradient" StartPoint="0%, 0%" EndPoint="100%, 0%">
+                 <GradientStop Offset="0" Color="{DynamicResource HoverGradientColor1}"></GradientStop>
+                 <GradientStop Offset="1" Color="{DynamicResource HoverGradientColor2}"></GradientStop>
+             </LinearGradientBrush>
+    
+             <LinearGradientBrush x:Key="SuccessGradient" StartPoint="0%, 0%" EndPoint="100%, 0%">
+                 <GradientStop Offset="0" Color="{DynamicResource SuccessGradientColor1}"></GradientStop>
+                 <GradientStop Offset="1" Color="{DynamicResource SuccessGradientColor2}"></GradientStop>
+             </LinearGradientBrush>
+    
+             <LinearGradientBrush x:Key="SuccessHoverGradient" StartPoint="0%, 0%" EndPoint="100%, 0%">
+                 <GradientStop Offset="0" Color="{DynamicResource SuccessHoverGradientColor1}"></GradientStop>
+                 <GradientStop Offset="1" Color="{DynamicResource SuccessHoverGradientColor2}"></GradientStop>
+             </LinearGradientBrush>
+    
+             <LinearGradientBrush x:Key="AlertGradient" StartPoint="0%, 0%" EndPoint="100%, 0%">
+                 <GradientStop Offset="0" Color="{DynamicResource AlertGradientColor1}"></GradientStop>
+                 <GradientStop Offset="1" Color="{DynamicResource AlertGradientColor2}"></GradientStop>
+             </LinearGradientBrush>
+    
+             <LinearGradientBrush x:Key="AlertHoverGradient" StartPoint="0%, 0%" EndPoint="100%, 0%">
+                 <GradientStop Offset="0" Color="{DynamicResource AlertGradientColor1}"></GradientStop>
+                 <GradientStop Offset="1" Color="{DynamicResource AlertGradientColor1}"></GradientStop>
+             </LinearGradientBrush>
+    
+             <LinearGradientBrush x:Key="DangerGradient" StartPoint="0%, 0%" EndPoint="100%, 0%">
+                 <GradientStop Offset="0" Color="{DynamicResource DangerGradientColor1}"></GradientStop>
+                 <GradientStop Offset="1" Color="{DynamicResource DangerGradientColor2}"></GradientStop>
+             </LinearGradientBrush>
+    
+             <LinearGradientBrush x:Key="DangerHoverGradient" StartPoint="0%, 0%" EndPoint="100%, 0%">
+                 <GradientStop Offset="0" Color="{DynamicResource DangerHoverGradientColor1}"></GradientStop>
+                 <GradientStop Offset="1" Color="{DynamicResource DangerHoverGradientColor2}"></GradientStop>
+             </LinearGradientBrush>
+    
+             <!-- Card Top-Border Gradients -->
+             <LinearGradientBrush x:Key="CyanCardGradient" StartPoint="0%,50%" EndPoint="100%,50%">
+                 <GradientStop Color="{DynamicResource CyanColor}" Offset="0" />
+                 <GradientStop Color="{DynamicResource CyanLightColor}" Offset="1" />
+             </LinearGradientBrush>
+    
+             <LinearGradientBrush x:Key="FuchsiaCardGradient" StartPoint="0%,50%" EndPoint="100%,50%">
+                 <GradientStop Color="{DynamicResource FuchsiaColor}" Offset="0" />
+                 <GradientStop Color="{DynamicResource FuchsiaLightColor}" Offset="1" />
+             </LinearGradientBrush>
+    
+             <LinearGradientBrush x:Key="GreenCardGradient" StartPoint="0%,50%" EndPoint="100%,50%">
+                 <GradientStop Color="{DynamicResource GreenColor}" Offset="0" />
+                 <GradientStop Color="{DynamicResource GreenDarkColor}" Offset="1" />
+             </LinearGradientBrush>
+    
+             <LinearGradientBrush x:Key="RedCardGradient" StartPoint="0%,50%" EndPoint="100%,50%">
+                 <GradientStop Color="{DynamicResource RedColor}" Offset="0" />
+                 <GradientStop Color="{DynamicResource RedDarkColor}" Offset="1" />
+             </LinearGradientBrush>
+    
+            <!-- ==================== -->
+            <!--   Font Resources     -->
+            <!-- ==================== -->
+
+            <FontFamily x:Key="Phosphor">avares://DLC_PRO/Assets/Fonts/Phosphor.ttf#Phosphor</FontFamily>
+            <FontFamily x:Key="PhosphorFill">avares://DLC_PRO/Assets/Fonts/Phosphor-Fill.ttf#Phosphor-Fill</FontFamily>
+
+            <!-- BatchProcess3는 Noto Sans JP를 쓰지만 한글이 없으므로 기본 글꼴(Inter) + 시스템 한글 글꼴(맑은 고딕) 대체를 사용 -->
+            <FontFamily x:Key="DefaultFontFamily">$Default</FontFamily>
+            <FontFamily x:Key="MonoFontFamily">Cascadia Mono, Consolas, DejaVu Sans Mono, monospace</FontFamily>
+
+            <!-- DLC_PRO 전용 -->
+            <SolidColorBrush x:Key="ReadoutBackground">#10131F</SolidColorBrush>
+            <SolidColorBrush x:Key="SidebarBorder">#1E2238</SolidColorBrush>
+            <x:Double x:Key="RowLabelMinWidth">150</x:Double>
+            <x:Double x:Key="CardWidth">400</x:Double>
+        </ResourceDictionary>
+
+    </Application.Resources>
+</Application>

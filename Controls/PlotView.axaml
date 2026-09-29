@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:sp="clr-namespace:ScottPlot.Avalonia;assembly=ScottPlot.Avalonia"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="DLC_PRO.Controls.PlotView">
+    <!-- ScottPlot 래퍼: 그리기/마우스 처리만 담당 (데이터는 ViewModel의 PlotModel) -->
+    <Border Background="{DynamicResource CardBackground}"
+            BorderBrush="{DynamicResource CardBorder}"
+            BorderThickness="1"
+            CornerRadius="{DynamicResource CornerLg}"
+            ClipToBounds="True"
+            Padding="4">
+        <sp:AvaPlot Name="Plot" />
+    </Border>
+</UserControl>

@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:pages="using:DLC_PRO.ViewModels.Pages"
+             xmlns:vm="using:DLC_PRO.ViewModels"
+             xmlns:m="using:DLC_PRO.Models"
+             xmlns:conv="using:DLC_PRO.Converters"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+             x:Class="DLC_PRO.Views.Pages.WideScanPageView"
+             x:DataType="pages:WideScanPageViewModel"
+             Foreground="{DynamicResource PrimaryForeground}">
+    <Grid RowDefinitions="Auto, *" ColumnDefinitions="470, *">
+        <!-- 페이지 헤더 -->
+        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="{DynamicResource PagePaddingFirst}" Spacing="2">
+            <TextBlock Classes="page-title" Text="{Binding Title}" />
+            <TextBlock Classes="page-subtitle" Text="{Binding Subtitle}" />
+        </StackPanel>
+
+        <!-- 왼쪽: 설정 카드 -->
+        <ScrollViewer Grid.Row="1" Grid.Column="0" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="28 0 12 20" Classes="cards">
+                <Card Header="Wide Scan" IconText="&#xea9a;">
+                    <StackPanel Spacing="8">
+                        <ContentControl Content="{Binding WsOutput}" />
+                        <ContentControl Content="{Binding WsValueSet}" />
+                        <ContentControl Content="{Binding WsValueAct}" />
+                        <ContentControl Content="{Binding WsBegin}" />
+                        <ContentControl Content="{Binding WsEnd}" />
+                        <ContentControl Content="{Binding WsSpeed}" />
+                        <ContentControl Content="{Binding WsDuration}" />
+                        <ContentControl Content="{Binding WsShape}" />
+                        <ContentControl Content="{Binding WsContinuous}" />
+                        <ContentControl Content="{Binding WsRestoreOnEnd}" />
+                        <ContentControl Content="{Binding WsStepsize}" />
+                        <ContentControl Content="{Binding WsSampleCount}" />
+                        <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8"><IconButton Classes="small success" IconText="&#xe3d0;" Content="시작" Command="{Binding StartCommand}" /><IconButton Classes="small danger" IconText="&#xe46c;" Content="정지" Command="{Binding StopCommand}" /></WrapPanel>
+                        <Grid ColumnDefinitions="*, Auto" ColumnSpacing="10"><ProgressBar Value="{Binding Progress}" Minimum="0" Maximum="100" Height="8" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Classes="unit" Text="{Binding ProgressText}" /></Grid>
+                        <ContentControl Content="{Binding WsStateRow}" />
+                    </StackPanel>
+                </Card>
+                <Card Header="기록 신호 (Recorder inputs)" IconText="&#xe3ee;">
+                    <StackPanel Spacing="8">
+                        <ContentControl Content="{Binding RecCh1}" />
+                        <ContentControl Content="{Binding RecCh2}" />
+                        <CheckBox Content="스캔 종료 시 데이터 자동 읽기" IsChecked="{Binding AutoLoad}" />
+                        <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8"><IconButton Classes="small outline" IconText="&#xe20c;" Content="데이터 읽기" Command="{Binding LoadDataCommand}" /><IconButton Classes="small outline" IconText="&#xe248;" Content="CSV 저장" Command="{Binding SaveCsvCommand}" /></WrapPanel>
+                    </StackPanel>
+                </Card>
+                <Card Header="주파수 축 (Piezo V → 상대 주파수 MHz)" IconText="&#xe154;">
+                    <StackPanel Spacing="8">
+                        <CheckBox Content="그래프 X축을 상대 주파수(MHz)로 표시" IsChecked="{Binding FreqAxis.ShowFrequency}" />
+                        <Grid ColumnDefinitions="Auto,*,Auto"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="튜닝 계수" Margin="0 0 12 0" /><NumericUpDown Grid.Column="1" Classes="compact" FormatString="F5" Increment="0.001" Minimum="-1000" Maximum="1000" Value="{Binding FreqAxis.Coefficient}" /><TextBlock Grid.Column="2" Classes="unit" Text="GHz/V" /></Grid>
+                        <RadioButton GroupName="{Binding FreqAxis.CenterName}" Content="{Binding FreqAxis.ZeroCenterText}" IsChecked="{Binding FreqAxis.UseCenterZero}" />
+                        <RadioButton GroupName="{Binding FreqAxis.CenterName}" Content="사용자 지정 전압 = 0 MHz" IsChecked="{Binding FreqAxis.UseCustomZero}" />
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="기준 전압 (0 MHz)" Margin="0 0 12 0" /><NumericUpDown Grid.Column="1" Classes="compact" FormatString="F4" Increment="0.01" Minimum="-1000" Maximum="1000" Value="{Binding FreqAxis.ZeroVoltage}" IsEnabled="{Binding FreqAxis.UseCustomZero}" /><TextBlock Grid.Column="2" Classes="unit" Text="V" /></Grid>
+                        <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8"><Button Classes="small outline" Content="현재 스캔 중심 → 기준" Command="{Binding FreqAxis.CenterToZeroCommand}" /><Button Classes="small outline" Content="현재 락 포인트 → 기준" Command="{Binding FreqAxis.LockpointToZeroCommand}" IsVisible="{Binding FreqAxis.HasLockpointButton}" /></WrapPanel>
+                        <TextBlock Classes="info" Text="{Binding FreqAxis.Info}" />
+                        <TextBlock Classes="hint" Text="계수는 레이저 헤드 사양서의 피에조 튜닝 계수입니다. 전압을 올릴 때 주파수가 내려가면 음수로 입력하세요. 0이면 변환하지 않고 전압(V)으로 표시합니다." />
+                    </StackPanel>
+                </Card>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 오른쪽 -->
+        <PlotView Grid.Row="1" Grid.Column="1" Margin="12 0 28 20" Model="{Binding Plot}" />
+    </Grid>
+</UserControl>

@@ -1,0 +1,56 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:pages="using:DLC_PRO.ViewModels.Pages"
+             xmlns:vm="using:DLC_PRO.ViewModels"
+             xmlns:m="using:DLC_PRO.Models"
+             xmlns:conv="using:DLC_PRO.Converters"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+             x:Class="DLC_PRO.Views.Pages.RecorderPageView"
+             x:DataType="pages:RecorderPageViewModel"
+             Foreground="{DynamicResource PrimaryForeground}">
+    <Grid RowDefinitions="Auto, *" ColumnDefinitions="470, *">
+        <!-- 페이지 헤더 -->
+        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="{DynamicResource PagePaddingFirst}" Spacing="2">
+            <TextBlock Classes="page-title" Text="{Binding Title}" />
+            <TextBlock Classes="page-subtitle" Text="{Binding Subtitle}" />
+        </StackPanel>
+
+        <!-- 왼쪽: 설정 카드 -->
+        <ScrollViewer Grid.Row="1" Grid.Column="0" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="28 0 12 20" Classes="cards">
+                <Card Header="Recorder 설정" IconText="&#xe3ee;">
+                    <StackPanel Spacing="8">
+                        <ContentControl Content="{Binding Trigger}" />
+                        <ContentControl Content="{Binding Mode}" />
+                        <ContentControl Content="{Binding ChX}" />
+                        <ContentControl Content="{Binding Ch1}" />
+                        <ContentControl Content="{Binding Ch2}" />
+                        <WrapPanel ItemSpacing="16"><ContentControl Content="{Binding Ch1Lp}" /><ContentControl Content="{Binding Ch2Lp}" /></WrapPanel>
+                        <ContentControl Content="{Binding Ch1Cutoff}" />
+                        <ContentControl Content="{Binding Ch2Cutoff}" />
+                        <ContentControl Content="{Binding RecordingTime}" />
+                        <ContentControl Content="{Binding SampleCountSet}" />
+                        <ContentControl Content="{Binding SampleCount}" />
+                        <ContentControl Content="{Binding SamplingRate}" />
+                    </StackPanel>
+                </Card>
+                <Card Header="실행" IconText="&#xe3d0;">
+                    <StackPanel Spacing="8">
+                        <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8"><IconButton Classes="small alert" IconText="&#xe3ee;" Content="기록 시작 (Arm)" Command="{Binding ArmCommand}" /><IconButton Classes="small outline" IconText="&#xe46c;" Content="정지" Command="{Binding StopCommand}" /></WrapPanel>
+                        <ContentControl Content="{Binding StateRow}" />
+                        <ContentControl Content="{Binding DataCount}" />
+                        <CheckBox Content="기록 완료 시 자동 읽기" IsChecked="{Binding AutoLoad}" />
+                        <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8"><IconButton Classes="small outline" IconText="&#xe20c;" Content="데이터 읽기" Command="{Binding LoadDataCommand}" /><IconButton Classes="small outline" IconText="&#xe248;" Content="CSV 저장" Command="{Binding SaveCsvCommand}" /></WrapPanel>
+                        <ProgressBar Value="{Binding LoadProgress}" Minimum="0" Maximum="100" Height="8" />
+                        <IconButton Classes="small outline danger" IconText="&#xe4a6;" Content="장비 데이터 지우기" Command="{Binding ClearDeviceDataCommand}" />
+                    </StackPanel>
+                </Card>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 오른쪽 -->
+        <PlotView Grid.Row="1" Grid.Column="1" Margin="12 0 28 20" Model="{Binding Plot}" />
+    </Grid>
+</UserControl>

@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:pages="using:DLC_PRO.ViewModels.Pages"
+             xmlns:vm="using:DLC_PRO.ViewModels"
+             xmlns:m="using:DLC_PRO.Models"
+             xmlns:conv="using:DLC_PRO.Converters"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+             x:Class="DLC_PRO.Views.Pages.ConsolePageView"
+             x:DataType="pages:ConsolePageViewModel"
+             Foreground="{DynamicResource PrimaryForeground}">
+    <Grid RowDefinitions="Auto, Auto, *, Auto">
+        <!-- 페이지 헤더 -->
+        <StackPanel Grid.Row="0" Margin="{DynamicResource PagePaddingFirst}" Spacing="2">
+            <TextBlock Classes="page-title" Text="{Binding Title}" />
+            <TextBlock Classes="page-subtitle" Text="{Binding Subtitle}" />
+        </StackPanel>
+
+        <!-- 빠른 명령 -->
+        <ItemsControl Grid.Row="1" Margin="28 0 28 10" ItemsSource="{Binding QuickCommands}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                    <Button Classes="smaller outline"
+                            FontFamily="{DynamicResource MonoFontFamily}"
+                            Content="{Binding}"
+                            Command="{Binding $parent[ItemsControl].((pages:ConsolePageViewModel)DataContext).QuickCommand}"
+                            CommandParameter="{Binding}" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- 출력 -->
+        <TextBox Grid.Row="2" Name="Output" Classes="console" Margin="28 0 28 10" Text="{Binding Output}" />
+
+        <!-- 입력 -->
+        <Grid Grid.Row="3" ColumnDefinitions="*, Auto, Auto" ColumnSpacing="8" Margin="28 0 28 20">
+            <TextBox Name="Input" Text="{Binding Input}" FontFamily="{DynamicResource MonoFontFamily}"
+                     PlaceholderText="(param-ref 'laser1:dl:cc:current-act)">
+                <TextBox.KeyBindings>
+                    <KeyBinding Gesture="Enter" Command="{Binding SendCommand}" />
+                    <KeyBinding Gesture="Up" Command="{Binding HistoryUpCommand}" />
+                    <KeyBinding Gesture="Down" Command="{Binding HistoryDownCommand}" />
+                </TextBox.KeyBindings>
+            </TextBox>
+            <IconButton Grid.Column="1" Classes="small" IconText="&#xe396;" Content="전송" Command="{Binding SendCommand}" />
+            <IconButton Grid.Column="2" Classes="small outline alert" IconText="&#xec54;" Content="지우기" Command="{Binding ClearCommand}" />
+        </Grid>
+    </Grid>
+</UserControl>

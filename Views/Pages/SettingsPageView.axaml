@@ -1,0 +1,57 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:pages="using:DLC_PRO.ViewModels.Pages"
+             xmlns:vm="using:DLC_PRO.ViewModels"
+             xmlns:m="using:DLC_PRO.Models"
+             xmlns:conv="using:DLC_PRO.Converters"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+             x:Class="DLC_PRO.Views.Pages.SettingsPageView"
+             x:DataType="pages:SettingsPageViewModel"
+             Foreground="{DynamicResource PrimaryForeground}">
+    <Grid RowDefinitions="Auto, *">
+        <!-- 페이지 헤더 -->
+        <StackPanel Grid.Row="0" Margin="{DynamicResource PagePaddingFirst}" Spacing="2">
+            <TextBlock Classes="page-title" Text="{Binding Title}" />
+            <TextBlock Classes="page-subtitle" Text="{Binding Subtitle}" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+            <WrapPanel Margin="28 0 28 20" Classes="cards" Orientation="Horizontal">
+                <Card Header="TA 증폭기 소프트웨어 안전 설정" IconText="&#xe40c;">
+                    <StackPanel Spacing="8">
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="최소 seed 파워 (0=장비값)" Margin="0 0 12 0" /><NumericUpDown Grid.Column="1" Classes="compact" FormatString="F2" Increment="0.5" Minimum="0" Maximum="1000" Value="{Binding MinSeedPowerMw}" /><TextBlock Grid.Column="2" Classes="unit" Text="mW" /></Grid>
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="최대 증폭기 전류 (0=clip)" Margin="0 0 12 0" /><NumericUpDown Grid.Column="1" Classes="compact" FormatString="F0" Increment="50" Minimum="0" Maximum="20000" Value="{Binding MaxAmpCurrentMa}" /><TextBlock Grid.Column="2" Classes="unit" Text="mA" /></Grid>
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="램프 스텝" Margin="0 0 12 0" /><NumericUpDown Grid.Column="1" Classes="compact" FormatString="F0" Increment="10" Minimum="1" Maximum="5000" Value="{Binding RampStepMa}" /><TextBlock Grid.Column="2" Classes="unit" Text="mA" /></Grid>
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="램프 간격" Margin="0 0 12 0" /><NumericUpDown Grid.Column="1" Classes="compact" FormatString="F0" Increment="50" Minimum="20" Maximum="10000" Value="{Binding RampIntervalMs}" /><TextBlock Grid.Column="2" Classes="unit" Text="ms" /></Grid>
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="확인창 기준 (상승폭)" Margin="0 0 12 0" /><NumericUpDown Grid.Column="1" Classes="compact" FormatString="F0" Increment="50" Minimum="0" Maximum="20000" Value="{Binding ConfirmDeltaMa}" /><TextBlock Grid.Column="2" Classes="unit" Text="mA" /></Grid>
+                        <CheckBox Content="seed 감시(Watchdog) 사용" IsChecked="{Binding WatchdogEnabled}" />
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="감시 지연" Margin="0 0 12 0" /><NumericUpDown Grid.Column="1" Classes="compact" FormatString="F0" Increment="50" Minimum="50" Maximum="10000" Value="{Binding WatchdogDelayMs}" /><TextBlock Grid.Column="2" Classes="unit" Text="ms" /></Grid>
+                        <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8"><IconButton Classes="small success" IconText="&#xe248;" Content="적용 및 저장" Command="{Binding ApplySafetyCommand}" /><IconButton Classes="small outline" IconText="&#xe038;" Content="되돌리기" Command="{Binding RevertSafetyCommand}" /></WrapPanel>
+                        <TextBlock Classes="info" Foreground="{DynamicResource AmberAccent}" Text="변경 내용이 아직 적용되지 않았습니다." IsVisible="{Binding SafetyDirty}" />
+                        <TextBlock Classes="hint" Text="장비 자체의 seed/출력 보호(seed-limits, output-limits)는 항상 동작하며, 이 설정은 그 위에 추가되는 소프트웨어 보호입니다. 증폭기 ON 시 램프 스텝부터 시작해 설정 전류까지 단계적으로 올리고, seed 파워가 기준보다 낮거나 마스터가 꺼지면 감시 지연 후 증폭기를 끕니다." />
+                    </StackPanel>
+                </Card>
+                <Card Header="통신" IconText="&#xe2e2;">
+                    <StackPanel Spacing="8">
+                        <CheckBox Content="송수신(TX/RX) 로그를 Console 페이지에 표시" IsChecked="{Binding LogTraffic}" />
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="스코프 최대 갱신률" Margin="0 0 12 0" /><NumericUpDown Grid.Column="1" Classes="compact" FormatString="F0" Increment="1" Minimum="1" Maximum="30" Value="{Binding ScopeMaxRate}" /><TextBlock Grid.Column="2" Classes="unit" Text="Hz" /></Grid>
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="명령 포트 (TCP)" Margin="0 0 12 0" /><NumericUpDown Grid.Column="1" Classes="compact" FormatString="F0" Increment="1" Minimum="1" Maximum="65535" Value="{Binding CmdPort}" /><TextBlock Grid.Column="2" Classes="unit" Text="" /></Grid>
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="모니터링 포트 (TCP)" Margin="0 0 12 0" /><NumericUpDown Grid.Column="1" Classes="compact" FormatString="F0" Increment="1" Minimum="1" Maximum="65535" Value="{Binding MonPort}" /><TextBlock Grid.Column="2" Classes="unit" Text="" /></Grid>
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="모니터링 라인" Margin="0 0 12 0" /><Border Grid.Column="1" Classes="readout"><TextBlock Classes="readout" TextAlignment="Left" Text="{Binding MonitorLineText}" /></Border></Grid>
+                        <TextBlock Classes="hint" Text="포트 변경은 다음 연결부터 적용됩니다. DLC pro 기본값: 명령 1998, 모니터링 1999. USB(가상 COM) 연결은 모니터링 라인이 없어 폴링으로 동작합니다." />
+                    </StackPanel>
+                </Card>
+                <Card Header="프로그램 정보" IconText="&#xe2ce;">
+                    <StackPanel Spacing="8">
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="버전" Margin="0 0 12 0" /><Border Grid.Column="1" Classes="readout"><TextBlock Classes="readout" TextAlignment="Left" Text="{Binding Version}" /></Border></Grid>
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="설정 폴더" Margin="0 0 12 0" /><Border Grid.Column="1" Classes="readout"><TextBlock Classes="readout" TextAlignment="Left" Text="{Binding SettingsFolder}" /></Border></Grid>
+                        <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8"><IconButton Classes="small outline" IconText="&#xe256;" Content="설정 폴더 열기" Command="{Binding OpenSettingsFolderCommand}" /><IconButton Classes="small outline" IconText="&#xe256;" Content="로그 폴더 열기" Command="{Binding OpenLogFolderCommand}" /></WrapPanel>
+                        <TextBlock Classes="hint" Text="DLC_PRO — Avalonia 12 + CommunityToolkit.Mvvm (MVVM) + ScottPlot 5. 장비 통신 로직은 WinForms 버전(DlcProControl)의 DlcPro.Core를 이식했습니다." />
+                    </StackPanel>
+                </Card>
+            </WrapPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

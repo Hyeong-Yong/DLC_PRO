@@ -1,0 +1,64 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    x:ClassModifier="internal">
+    <Design.PreviewWith>
+        <Border Padding="20" Background="{DynamicResource PrimaryBackground}" Width="420">
+            <Card Header="CC - Master" IconText="&#xe2de;">
+                <Card.HeaderRight>
+                    <Button Classes="small success" Content="● Enable" />
+                </Card.HeaderRight>
+                <TextBlock Text="Content" />
+            </Card>
+        </Border>
+    </Design.PreviewWith>
+
+    <ControlTheme x:Key="{x:Type Card}" TargetType="Card">
+        <Setter Property="Background" Value="{DynamicResource CardBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource CornerLg}" />
+        <Setter Property="Padding" Value="16 12 16 16" />
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryForeground}" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        Padding="{TemplateBinding Padding}">
+                    <Grid RowDefinitions="Auto, Auto, *">
+                        <!-- Header -->
+                        <Grid ColumnDefinitions="Auto, *, Auto" MinHeight="30">
+                            <TextBlock Name="PART_Icon"
+                                       Classes="icon"
+                                       Margin="0 0 8 0"
+                                       FontSize="16"
+                                       Foreground="{DynamicResource AccentPurple}"
+                                       Text="{TemplateBinding IconText}"
+                                       IsVisible="{Binding $parent[Card].IconText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                            <ContentPresenter Grid.Column="1"
+                                              Name="PART_HeaderPresenter"
+                                              VerticalAlignment="Center"
+                                              Content="{TemplateBinding Header}"
+                                              FontSize="15"
+                                              FontWeight="Bold"
+                                              Foreground="{DynamicResource LightForeground}" />
+                            <ContentPresenter Grid.Column="2"
+                                              Name="PART_HeaderRight"
+                                              VerticalAlignment="Center"
+                                              Content="{TemplateBinding HeaderRight}" />
+                        </Grid>
+                        <!-- Divider -->
+                        <Border Grid.Row="1" Height="1" Margin="0 10 0 12" Background="{DynamicResource CardBorderSubtle}" />
+                        <!-- Content -->
+                        <ContentPresenter Grid.Row="2"
+                                          Name="PART_ContentPresenter"
+                                          Grid.IsSharedSizeScope="True"
+                                          Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}" />
+                    </Grid>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </ControlTheme>
+</ResourceDictionary>

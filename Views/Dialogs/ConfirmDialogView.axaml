@@ -1,0 +1,63 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:DLC_PRO.ViewModels.Dialogs"
+             mc:Ignorable="d"
+             x:Class="DLC_PRO.Views.Dialogs.ConfirmDialogView"
+             x:DataType="vm:ConfirmDialogViewModel"
+             MinWidth="360"
+             Width="{Binding DialogWidth}"
+             Foreground="{DynamicResource PrimaryForeground}"
+             Background="Transparent">
+
+    <!-- BatchProcess3 ConfirmDialogView와 같은 구성 -->
+    <Border Background="{DynamicResource PrimaryBackground}"
+            BorderBrush="{DynamicResource DefaultGradient}"
+            BorderThickness="{DynamicResource PrimaryBorderThickness}"
+            CornerRadius="20"
+            ClipToBounds="True"
+            Margin="10">
+        <Border.Effect>
+            <DropShadowEffect Color="{DynamicResource PrimaryBackgroundColor2}" />
+        </Border.Effect>
+
+        <Grid RowDefinitions="Auto, *">
+            <!-- 제목 -->
+            <Border Grid.Row="0" Background="{DynamicResource PrimaryBackgroundGradient}" CornerRadius="20 20 0 0">
+                <TextBlock Text="{Binding Title}" Padding="16 12" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource LightForeground}" />
+            </Border>
+
+            <Grid Grid.Row="1" RowDefinitions="Auto, Auto, Auto, Auto" Margin="20">
+                <!-- 내용 -->
+                <Grid Grid.Row="0" ColumnDefinitions="Auto, 14, *">
+                    <Label Classes="icon" Content="{Binding IconText}" FontSize="30" VerticalAlignment="Top"
+                           Foreground="{DynamicResource AlertGradient}" IsVisible="{Binding IsWarning}" />
+                    <Label Classes="icon" Content="{Binding IconText}" FontSize="30" VerticalAlignment="Top"
+                           Foreground="{DynamicResource DangerGradient}" IsVisible="{Binding IsDanger}" />
+                    <Label Classes="icon" Content="{Binding IconText}" FontSize="30" VerticalAlignment="Top"
+                           Foreground="{DynamicResource AccentPurple}" IsVisible="{Binding IsQuestion}" />
+                    <TextBlock Grid.Column="2" TextWrapping="Wrap" Text="{Binding Message}" FontSize="15" LineHeight="22" VerticalAlignment="Center" />
+                </Grid>
+
+                <TextBlock Grid.Row="1" Text="{Binding StatusText}" TextAlignment="Right" TextWrapping="Wrap"
+                           Foreground="{DynamicResource AlertGradient}" Margin="0 10"
+                           IsVisible="{Binding StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                <!-- 버튼 -->
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0 18 0 0"
+                            IsVisible="{Binding !Busy}">
+                    <Button Name="CancelButton" Command="{Binding CancelCommand}" Classes="danger outline small" IsVisible="{Binding ShowCancelButton}">
+                        <TextBlock MinWidth="70" TextAlignment="Center" Text="{Binding CancelText}" />
+                    </Button>
+                    <Button Name="ConfirmButton" Command="{Binding ConfirmCommand}" Classes="success small">
+                        <TextBlock MinWidth="70" TextAlignment="Center" Text="{Binding ConfirmText}" />
+                    </Button>
+                </StackPanel>
+
+                <TextBlock Grid.Row="3" Text="{Binding ProgressText}" IsVisible="{Binding Busy}" TextAlignment="Right"
+                           TextWrapping="Wrap" Foreground="{DynamicResource ActiveGradientText}" Margin="0 10" />
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

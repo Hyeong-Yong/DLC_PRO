@@ -1,0 +1,223 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:DLC_PRO.ViewModels"
+             xmlns:m="using:DLC_PRO.Models"
+             xmlns:conv="using:DLC_PRO.Converters"
+             mc:Ignorable="d" d:DesignWidth="1400" d:DesignHeight="860"
+             x:Class="DLC_PRO.Views.MainView"
+             x:DataType="vm:MainViewModel"
+             Foreground="{DynamicResource PrimaryForeground}">
+
+    <!-- BatchProcess3 MainView 구조: 왼쪽 사이드 메뉴 + 오른쪽 페이지 + 대화상자 오버레이 -->
+    <Grid Background="{DynamicResource PrimaryBackground}" ColumnDefinitions="Auto, *">
+
+        <!-- ============================ 사이드 메뉴 ============================ -->
+        <Border Grid.Column="0"
+                Classes="sidebar"
+                Padding="16 20"
+                Background="{DynamicResource PrimaryBackgroundGradient}"
+                BorderBrush="{DynamicResource SidebarBorder}"
+                BorderThickness="0 0 1 0">
+            <Grid RowDefinitions="Auto, *, Auto">
+
+                <!-- 로고 -->
+                <Button Classes="transparent" Padding="4 0 4 18" Command="{Binding SideMenuResizeCommand}" ToolTip.Tip="메뉴 접기/펼치기">
+                    <StackPanel Spacing="0">
+                        <TextBlock Classes="logo" Text="DLC pro" IsVisible="{Binding SideMenuExpanded}" />
+                        <TextBlock Classes="page-subtitle" Text="TOPTICA · Lock Control" IsVisible="{Binding SideMenuExpanded}" />
+                        <TextBlock Classes="logo" Text="D" IsVisible="{Binding !SideMenuExpanded}" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <!-- 페이지 메뉴 -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="10">
+                        <IconButton Classes="subtle" IconText="&#xe2de;" HorizontalAlignment="Stretch" Classes.active="{Binding LaserPageIsActive}" Command="{Binding GoToLaserCommand}" ToolTip.Tip="Laser">
+                            <Label Content="Laser" IsVisible="{Binding SideMenuExpanded}" />
+                        </IconButton>
+                        <IconButton Classes="subtle" IconText="&#xe2fa;" HorizontalAlignment="Stretch" Classes.active="{Binding ScanLockPageIsActive}" Command="{Binding GoToScanLockCommand}" ToolTip.Tip="Scan &amp; Lock">
+                            <Label Content="Scan &amp; Lock" IsVisible="{Binding SideMenuExpanded}" />
+                        </IconButton>
+                        <IconButton Classes="subtle" IconText="&#xe094;" HorizontalAlignment="Stretch" Classes.active="{Binding RelockPageIsActive}" Command="{Binding GoToRelockCommand}" ToolTip.Tip="ReLock">
+                            <Label Content="ReLock" IsVisible="{Binding SideMenuExpanded}" />
+                        </IconButton>
+                        <IconButton Classes="subtle" IconText="&#xe628;" HorizontalAlignment="Stretch" Classes.active="{Binding StabilizationPageIsActive}" Command="{Binding GoToStabilizationCommand}" ToolTip.Tip="Stabilization">
+                            <Label Content="Stabilization" IsVisible="{Binding SideMenuExpanded}" />
+                        </IconButton>
+                        <IconButton Classes="subtle" IconText="&#xea9a;" HorizontalAlignment="Stretch" Classes.active="{Binding WideScanPageIsActive}" Command="{Binding GoToWideScanCommand}" ToolTip.Tip="Wide Scan">
+                            <Label Content="Wide Scan" IsVisible="{Binding SideMenuExpanded}" />
+                        </IconButton>
+                        <IconButton Classes="subtle" IconText="&#xe3ee;" HorizontalAlignment="Stretch" Classes.active="{Binding RecorderPageIsActive}" Command="{Binding GoToRecorderCommand}" ToolTip.Tip="Recorder">
+                            <Label Content="Recorder" IsVisible="{Binding SideMenuExpanded}" />
+                        </IconButton>
+                        <IconButton Classes="subtle" IconText="&#xe610;" HorizontalAlignment="Stretch" Classes.active="{Binding SystemPageIsActive}" Command="{Binding GoToSystemCommand}" ToolTip.Tip="System">
+                            <Label Content="System" IsVisible="{Binding SideMenuExpanded}" />
+                        </IconButton>
+                        <IconButton Classes="subtle" IconText="&#xeae8;" HorizontalAlignment="Stretch" Classes.active="{Binding ConsolePageIsActive}" Command="{Binding GoToConsoleCommand}" ToolTip.Tip="Console">
+                            <Label Content="Console" IsVisible="{Binding SideMenuExpanded}" />
+                        </IconButton>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- 설정 + 메뉴 접기 -->
+                <StackPanel Grid.Row="2" Spacing="10" Margin="0 12 0 0">
+                    <IconButton Classes="subtle" IconText="&#xe272;" HorizontalAlignment="Stretch" Classes.active="{Binding SettingsPageIsActive}" Command="{Binding GoToSettingsCommand}" ToolTip.Tip="Settings">
+                        <Label Content="Settings" IsVisible="{Binding SideMenuExpanded}" />
+                    </IconButton>
+                    <Button Classes="transparent subtle" HorizontalAlignment="Center" Command="{Binding SideMenuResizeCommand}" ToolTip.Tip="메뉴 접기/펼치기">
+                        <Panel>
+                            <Label Classes="icon-only" Content="&#xe128;" IsVisible="{Binding SideMenuExpanded}" />
+                            <Label Classes="icon-only" Content="&#xe12a;" IsVisible="{Binding !SideMenuExpanded}" />
+                        </Panel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ============================ 오른쪽 영역 ============================ -->
+        <Grid Grid.Column="1" RowDefinitions="Auto, *, Auto">
+
+            <!-- 상단 연결/상태 바 (비상 버튼은 대화상자가 떠 있어도 누를 수 있도록 오버레이 밖) -->
+            <Border Grid.Row="0"
+                    Padding="20 10"
+                    Background="{DynamicResource TableHeaderBackground}"
+                    BorderBrush="{DynamicResource CardBorder}"
+                    BorderThickness="0 0 0 1">
+                <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="16">
+
+                    <!-- 연결 -->
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ComboBox Width="136"
+                                  ItemsSource="{Binding ConnectionTypes}"
+                                  SelectedIndex="{Binding ConnectionTypeIndex}"
+                                  IsEnabled="{Binding CanEditConnection}" />
+                        <TextBox Width="150"
+                                 Text="{Binding Host}"
+                                 PlaceholderText="192.168.0.100"
+                                 IsVisible="{Binding IsTcp}"
+                                 IsEnabled="{Binding CanEditConnection}" />
+                        <ComboBox Width="110"
+                                  ItemsSource="{Binding ComPorts}"
+                                  SelectedItem="{Binding ComPort}"
+                                  IsVisible="{Binding IsUsb}"
+                                  IsEnabled="{Binding CanEditConnection}" />
+                        <Button Classes="transparent subtle"
+                                Command="{Binding RefreshPortsCommand}"
+                                IsVisible="{Binding IsUsb}"
+                                IsEnabled="{Binding CanEditConnection}"
+                                ToolTip.Tip="COM 포트 새로고침">
+                            <Label Classes="icon-only" Content="&#xe094;" />
+                        </Button>
+                        <IconButton Classes="small"
+                                    Classes.outline="{Binding IsConnected}"
+                                    IconText="{Binding ConnectIcon}"
+                                    Content="{Binding ConnectButtonText}"
+                                    Command="{Binding ToggleConnectCommand}"
+                                    IsEnabled="{Binding !IsDialogOpen}" />
+                        <Ellipse Classes="led"
+                                 Classes.lit="{Binding ConnectionLed, Converter={x:Static conv:LedIsLitConverter.Instance}}"
+                                 Fill="{Binding ConnectionLed, Converter={x:Static conv:LedBrushConverter.Instance}}"
+                                 ToolTip.Tip="{Binding EndpointText}" />
+                    </StackPanel>
+
+                    <!-- 상태 표시 -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" ClipToBounds="True">
+                        <Border Width="1" Height="24" Background="{DynamicResource CardBorderSubtle}" />
+                        <TextBlock Classes="status" Text="Emission" />
+                        <Ellipse Classes="led"
+                                 Classes.lit="{Binding EmissionLed, Converter={x:Static conv:LedIsLitConverter.Instance}}"
+                                 Fill="{Binding EmissionLed, Converter={x:Static conv:LedBrushConverter.Instance}}" />
+                        <TextBlock Classes="status" Text="Interlock" Margin="6 0 0 0" />
+                        <Ellipse Classes="led"
+                                 Classes.lit="{Binding InterlockLed, Converter={x:Static conv:LedIsLitConverter.Instance}}"
+                                 Fill="{Binding InterlockLed, Converter={x:Static conv:LedBrushConverter.Instance}}"
+                                 ToolTip.Tip="녹색 = 닫힘(정상), 빨강 = 열림" />
+                        <TextBlock Classes="status" Text="Lock" Margin="6 0 0 0" />
+                        <Ellipse Classes="led"
+                                 Classes.lit="{Binding LockLed, Converter={x:Static conv:LedIsLitConverter.Instance}}"
+                                 Fill="{Binding LockLed, Converter={x:Static conv:LedBrushConverter.Instance}}" />
+                        <TextBlock Classes="status" Text="{Binding LockText}" FontWeight="Bold" Foreground="{DynamicResource LightForeground}" />
+                        <TextBlock Classes="status" Classes.bad="{Binding HealthIsBad}" Text="{Binding HealthText}" Margin="6 0 0 0" />
+                    </StackPanel>
+
+                    <!-- 비상 버튼 -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                        <IconButton Classes="small danger"
+                                    IconText="&#xe3da;"
+                                    Content="AMP OFF"
+                                    Command="{Binding AmpOffCommand}"
+                                    ToolTip.Tip="증폭기(TA) 전류 즉시 OFF" />
+                        <IconButton Classes="small outline danger"
+                                    IconText="&#xe3da;"
+                                    Content="ALL OFF"
+                                    Command="{Binding AllOffCommand}"
+                                    ToolTip.Tip="증폭기 → 마스터 순서로 전류 OFF" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- 현재 페이지 (ViewLocator가 View를 찾아 표시) -->
+            <!-- 대화상자가 떠 있으면 페이지 입력(키보드 포함) 차단 — 비상 버튼은 상단 바에 있으므로 영향 없음 -->
+            <ContentControl Grid.Row="1" Content="{Binding CurrentPage}" IsEnabled="{Binding !IsDialogOpen}" />
+
+            <!-- 하단 로그 -->
+            <Border Grid.Row="2"
+                    Background="{DynamicResource TableHeaderBackground}"
+                    BorderBrush="{DynamicResource CardBorder}"
+                    BorderThickness="0 1 0 0">
+                <Grid RowDefinitions="Auto, Auto">
+                    <Grid ColumnDefinitions="Auto, Auto, *, Auto, Auto, Auto" ColumnSpacing="12" Margin="16 6">
+                        <Button Classes="transparent subtle" Padding="0" Command="{Binding ToggleLogCommand}" ToolTip.Tip="로그 접기/펼치기">
+                            <Panel>
+                                <Label Classes="icon-only" Content="&#xe136;" FontSize="15" IsVisible="{Binding LogExpanded}" />
+                                <Label Classes="icon-only" Content="&#xe13c;" FontSize="15" IsVisible="{Binding !LogExpanded}" />
+                            </Panel>
+                        </Button>
+                        <TextBlock Grid.Column="1" Classes="status" Text="Log" FontWeight="Bold" />
+                        <TextBlock Grid.Column="2" Classes="status" Text="{Binding Log.Status}" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource LightForeground}" />
+                        <TextBlock Grid.Column="3" Classes="status" Text="{Binding MessagesText}" Foreground="{DynamicResource AmberAccent}" />
+                        <TextBlock Grid.Column="4" Classes="status" Text="{Binding UserLevelText}" />
+                        <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="10">
+                            <TextBlock Classes="status" Text="{Binding EndpointText}" />
+                            <Button Classes="transparent subtle" Padding="0" Command="{Binding ClearLogCommand}" ToolTip.Tip="로그 지우기">
+                                <Label Classes="icon-only" Content="&#xec54;" FontSize="15" />
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                    <ListBox Grid.Row="1"
+                             Name="LogList"
+                             Classes="log"
+                             Height="130"
+                             IsVisible="{Binding LogExpanded}"
+                             ItemsSource="{Binding Log.Entries}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="m:LogEntry">
+                                <Grid ColumnDefinitions="96, 64, *">
+                                    <TextBlock Text="{Binding TimeText}" Foreground="{DynamicResource SecondaryForeground}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding LevelText}"
+                                               Foreground="{Binding Level, Converter={x:Static conv:LogLevelBrushConverter.Instance}}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Message}" TextTrimming="CharacterEllipsis"
+                                               Foreground="{Binding Level, Converter={x:Static conv:LogLevelBrushConverter.Instance}}"
+                                               ToolTip.Tip="{Binding Message}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- 대화상자 오버레이 (페이지 + 로그 영역만 덮음, 상단 비상 버튼은 항상 사용 가능) -->
+            <Grid Grid.Row="1" Grid.RowSpan="2" IsVisible="{Binding IsDialogOpen}">
+                <Border Background="{DynamicResource DialogOverlay}" Opacity="0.5" />
+                <ContentControl Content="{Binding Dialog}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
+            </Grid>
+        </Grid>
+
+        <!-- 사이드 메뉴 오버레이 (대화상자 중 페이지 이동 방지) -->
+        <Border Grid.Column="0" Background="{DynamicResource DialogOverlay}" Opacity="0.5" IsVisible="{Binding IsDialogOpen}" />
+    </Grid>
+</UserControl>

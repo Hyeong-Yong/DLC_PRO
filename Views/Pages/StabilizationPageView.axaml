@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:pages="using:DLC_PRO.ViewModels.Pages"
+             xmlns:vm="using:DLC_PRO.ViewModels"
+             xmlns:m="using:DLC_PRO.Models"
+             xmlns:conv="using:DLC_PRO.Converters"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+             x:Class="DLC_PRO.Views.Pages.StabilizationPageView"
+             x:DataType="pages:StabilizationPageViewModel"
+             Foreground="{DynamicResource PrimaryForeground}">
+    <Grid RowDefinitions="Auto, *" ColumnDefinitions="470, *">
+        <!-- 페이지 헤더 -->
+        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="{DynamicResource PagePaddingFirst}" Spacing="2">
+            <TextBlock Classes="page-title" Text="{Binding Title}" />
+            <TextBlock Classes="page-subtitle" Text="{Binding Subtitle}" />
+        </StackPanel>
+
+        <!-- 왼쪽: 설정 카드 -->
+        <ScrollViewer Grid.Row="1" Grid.Column="0" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="28 0 12 20" Classes="cards">
+                <Card Header="Power Stabilization (출력 안정화)" IconText="&#xe628;">
+                    <Card.HeaderRight>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <ContentControl Content="{Binding PsEnable}" />
+                        </StackPanel>
+                    </Card.HeaderRight>
+                    <StackPanel Spacing="8">
+                        <ContentControl Content="{Binding PsState}" />
+                        <ContentControl Content="{Binding PsInput}" />
+                        <ContentControl Content="{Binding PsOutput}" />
+                        <ContentControl Content="{Binding PsSetpoint}" />
+                        <ContentControl Content="{Binding PsValue}" />
+                        <ContentControl Content="{Binding PsGainAll}" />
+                        <ContentControl Content="{Binding PsGainP}" />
+                        <ContentControl Content="{Binding PsGainI}" />
+                        <ContentControl Content="{Binding PsGainD}" />
+                        <ContentControl Content="{Binding PsSign}" />
+                        <ContentControl Content="{Binding PsHoldOnUnlock}" />
+                        <ContentControl Content="{Binding PsWindowEnabled}" />
+                        <ContentControl Content="{Binding PsWindowLow}" />
+                        <ContentControl Content="{Binding PsWindowHyst}" />
+                    </StackPanel>
+                </Card>
+                <Card Header="PD EXT (외부 포토다이오드 보정)" IconText="&#xe2dc;">
+                    <StackPanel Spacing="8">
+                        <ContentControl Content="{Binding PdInput}" />
+                        <ContentControl Content="{Binding PdPhotodiode}" />
+                        <ContentControl Content="{Binding PdPower}" />
+                        <ContentControl Content="{Binding PdCalOffset}" />
+                        <ContentControl Content="{Binding PdCalFactor}" />
+                    </StackPanel>
+                </Card>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 오른쪽 -->
+        <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="Auto, *" Margin="12 0 28 20">
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0 0 0 10">
+                <IconButton Classes="small outline alert" IconText="&#xec54;" Content="추세 지우기" Command="{Binding ClearTrendCommand}" />
+                <TextBlock Classes="hint" VerticalAlignment="Center" Text="0.1 s 간격 · 최근 6000점 (약 10분) · 더블클릭 = 자동 스케일" />
+            </StackPanel>
+            <PlotView Grid.Row="1" Model="{Binding Plot}" />
+        </Grid>
+    </Grid>
+</UserControl>

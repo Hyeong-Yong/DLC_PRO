@@ -1,0 +1,175 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Design.PreviewWith>
+        <Border Padding="20" Background="{DynamicResource PrimaryBackground}" Width="420">
+            <StackPanel Spacing="10">
+                <TextBlock Classes="page-title" Text="Laser" />
+                <TextBlock Classes="page-subtitle" Text="Subtitle" />
+                <TextBlock Classes="row-label" Text="Set Current" />
+                <Border Classes="readout"><TextBlock Classes="readout" Text="123.45" /></Border>
+                <TextBlock Classes="hint" Text="힌트 문장입니다." />
+                <Ellipse Classes="led" Fill="#22C55E" />
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
+
+    <!-- DLC_PRO 전용 스타일 (색/간격은 BatchProcess3 디자인 토큰 사용) -->
+
+    <!-- 페이지 헤더 -->
+    <Style Selector="TextBlock.page-title">
+        <Setter Property="FontSize" Value="30" />
+        <Setter Property="FontWeight" Value="Black" />
+        <Setter Property="Foreground" Value="{DynamicResource LightForeground}" />
+    </Style>
+    <Style Selector="TextBlock.page-subtitle">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryForeground}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <!-- 행 -->
+    <Style Selector="TextBlock.row-label">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryForeground}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style Selector="TextBlock.unit">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryForeground}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="6 0 0 0" />
+    </Style>
+    <Style Selector="TextBlock.hint">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryForeground}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.info">
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentPurple}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.section">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource LabelForeground}" />
+        <Setter Property="Margin" Value="0 6 0 0" />
+    </Style>
+
+    <!-- 읽기 전용 값 -->
+    <Style Selector="Border.readout">
+        <Setter Property="Background" Value="{DynamicResource ReadoutBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="10 5" />
+        <Setter Property="MinHeight" Value="30" />
+    </Style>
+    <Style Selector="TextBlock.readout">
+        <Setter Property="FontFamily" Value="{DynamicResource MonoFontFamily}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource LightForeground}" />
+        <Setter Property="TextAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style Selector="TextBlock.readout.alert">
+        <Setter Property="Foreground" Value="{DynamicResource RedAccent}" />
+    </Style>
+
+    <!-- 숫자 입력 -->
+    <Style Selector="NumericUpDown.param, NumericUpDown.compact">
+        <Setter Property="FontFamily" Value="{DynamicResource MonoFontFamily}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="TextAlignment" Value="Right" />
+        <Setter Property="MinHeight" Value="30" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="NumericUpDown.param:disabled">
+        <Setter Property="Opacity" Value="0.45" />
+    </Style>
+
+    <!-- 콤보 -->
+    <Style Selector="ComboBox.param">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="MinHeight" Value="30" />
+    </Style>
+
+    <!-- 표시등 -->
+    <Style Selector="Ellipse.led">
+        <Setter Property="Width" Value="14" />
+        <Setter Property="Height" Value="14" />
+        <Setter Property="Stroke" Value="#40000000" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Ellipse.led.lit">
+        <Setter Property="Effect">
+            <DropShadowEffect BlurRadius="10" OffsetX="0" OffsetY="0" Opacity="0.9" Color="White" />
+        </Setter>
+    </Style>
+
+    <!-- Enable 토글 버튼: 꺼짐 = outline, 켜짐 = success 그라디언트 -->
+    <Style Selector="Button.toggle">
+        <Setter Property="MinWidth" Value="96" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+
+    <!-- 락 상태 글자 (락 = 녹색) -->
+    <Style Selector="TextBlock.locked">
+        <Setter Property="Foreground" Value="{DynamicResource GreenAccent}" />
+    </Style>
+
+    <!-- 사이드 메뉴 로고 -->
+    <Style Selector="TextBlock.logo">
+        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontWeight" Value="Black" />
+        <Setter Property="Foreground" Value="{DynamicResource HoverGradient}" />
+    </Style>
+
+    <!-- 상단 상태 바 텍스트 -->
+    <Style Selector="TextBlock.status">
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryForeground}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.status.bad">
+        <Setter Property="Foreground" Value="{DynamicResource RedAccent}" />
+    </Style>
+
+    <!-- 로그 -->
+    <Style Selector="ListBox.log">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="FontFamily" Value="{DynamicResource MonoFontFamily}" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="ListBox.log ListBoxItem">
+        <Setter Property="Padding" Value="8 1" />
+        <Setter Property="MinHeight" Value="0" />
+    </Style>
+
+    <!-- 스크롤 영역 안의 카드 묶음 -->
+    <Style Selector="WrapPanel.cards > Card">
+        <Setter Property="Width" Value="{DynamicResource CardWidth}" />
+        <Setter Property="Margin" Value="0 0 16 16" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+    <Style Selector="StackPanel.cards > Card">
+        <Setter Property="Margin" Value="0 0 0 16" />
+    </Style>
+
+    <!-- 콘솔 출력 -->
+    <Style Selector="TextBox.console">
+        <Setter Property="FontFamily" Value="{DynamicResource MonoFontFamily}" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="Foreground" Value="#C8E6C8" />
+        <Setter Property="Background" Value="{DynamicResource ReadoutBackground}" />
+        <Setter Property="IsReadOnly" Value="True" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+        <Setter Property="AcceptsReturn" Value="True" />
+    </Style>
+
+</Styles>

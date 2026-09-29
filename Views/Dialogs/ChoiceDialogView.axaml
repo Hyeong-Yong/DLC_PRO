@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:DLC_PRO.ViewModels.Dialogs"
+             mc:Ignorable="d"
+             x:Class="DLC_PRO.Views.Dialogs.ChoiceDialogView"
+             x:DataType="vm:ChoiceDialogViewModel"
+             Width="560"
+             Foreground="{DynamicResource PrimaryForeground}"
+             Background="Transparent">
+
+    <Border Background="{DynamicResource PrimaryBackground}"
+            BorderBrush="{DynamicResource DefaultGradient}"
+            BorderThickness="{DynamicResource PrimaryBorderThickness}"
+            CornerRadius="20"
+            ClipToBounds="True"
+            Margin="10">
+        <Border.Effect>
+            <DropShadowEffect Color="{DynamicResource PrimaryBackgroundColor2}" />
+        </Border.Effect>
+
+        <Grid RowDefinitions="Auto, *">
+            <Border Grid.Row="0" Background="{DynamicResource PrimaryBackgroundGradient}" CornerRadius="20 20 0 0">
+                <TextBlock Text="{Binding Title}" Padding="16 12" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource LightForeground}" />
+            </Border>
+
+            <Grid Grid.Row="1" RowDefinitions="Auto, Auto" Margin="20">
+                <Grid ColumnDefinitions="Auto, 14, *">
+                    <Label Classes="icon" Content="{Binding IconText}" FontSize="30" VerticalAlignment="Top" Foreground="{DynamicResource AlertGradient}" />
+                    <TextBlock Grid.Column="2" TextWrapping="Wrap" Text="{Binding Message}" FontSize="15" LineHeight="22" VerticalAlignment="Center" />
+                </Grid>
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0 18 0 0">
+                    <Button Name="CancelButton" Command="{Binding CancelCommand}" Classes="outline small">
+                        <TextBlock MinWidth="60" TextAlignment="Center" Text="{Binding CancelText}" />
+                    </Button>
+                    <Button Command="{Binding SecondCommand}" Classes="alert small">
+                        <TextBlock MinWidth="70" TextAlignment="Center" Text="{Binding SecondText}" />
+                    </Button>
+                    <Button Command="{Binding FirstCommand}" Classes="success small">
+                        <TextBlock MinWidth="70" TextAlignment="Center" Text="{Binding FirstText}" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

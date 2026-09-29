@@ -1,0 +1,121 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:pages="using:DLC_PRO.ViewModels.Pages"
+             xmlns:conv="using:DLC_PRO.Converters"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+             x:Class="DLC_PRO.Views.Pages.LaserPageView"
+             x:DataType="pages:LaserPageViewModel"
+             Foreground="{DynamicResource PrimaryForeground}">
+    <Grid RowDefinitions="Auto, *">
+        <!-- 페이지 헤더 -->
+        <StackPanel Grid.Row="0" Margin="{DynamicResource PagePaddingFirst}" Spacing="2">
+            <TextBlock Classes="page-title" Text="{Binding Title}" />
+            <TextBlock Classes="page-subtitle" Text="{Binding Subtitle}" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+            <WrapPanel Margin="28 0 28 20" Classes="cards" Orientation="Horizontal">
+                <Card Header="CC - Master (마스터 전류)" IconText="&#xe2de;">
+                    <Card.HeaderRight>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Ellipse Classes="led" ToolTip.Tip="Emission" Classes.lit="{Binding CcEmission.Led, Converter={x:Static conv:LedIsLitConverter.Instance}}" Fill="{Binding CcEmission.Led, Converter={x:Static conv:LedBrushConverter.Instance}}" />
+                            <ContentControl Content="{Binding CcEnable}" />
+                        </StackPanel>
+                    </Card.HeaderRight>
+                    <StackPanel Spacing="8">
+                        <ContentControl Content="{Binding CcCurrentSet}" />
+                        <ContentControl Content="{Binding CcCurrentAct}" />
+                        <ContentControl Content="{Binding CcCurrentClip}" />
+                        <ContentControl Content="{Binding CcVoltage}" />
+                        <ContentControl Content="{Binding CcStatus}" />
+                    </StackPanel>
+                </Card>
+                <Card Header="TC - Master (마스터 온도)" IconText="&#xe5c6;">
+                    <Card.HeaderRight>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Ellipse Classes="led" ToolTip.Tip="Ready" Classes.lit="{Binding TcReadyLed.Led, Converter={x:Static conv:LedIsLitConverter.Instance}}" Fill="{Binding TcReadyLed.Led, Converter={x:Static conv:LedBrushConverter.Instance}}" />
+                            <ContentControl Content="{Binding TcEnable}" />
+                        </StackPanel>
+                    </Card.HeaderRight>
+                    <StackPanel Spacing="8">
+                        <ContentControl Content="{Binding TcTempSet}" />
+                        <ContentControl Content="{Binding TcTempAct}" />
+                        <ContentControl Content="{Binding TcReady}" />
+                        <ContentControl Content="{Binding TcStatus}" />
+                    </StackPanel>
+                </Card>
+                <Card Header="PC - Master (피에조)" IconText="&#xe802;">
+                    <Card.HeaderRight>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <ContentControl Content="{Binding PcEnable}" />
+                        </StackPanel>
+                    </Card.HeaderRight>
+                    <StackPanel Spacing="8">
+                        <ContentControl Content="{Binding PcVoltageSet}" />
+                        <ContentControl Content="{Binding PcVoltageAct}" />
+                        <ContentControl Content="{Binding PcVoltageMin}" />
+                        <ContentControl Content="{Binding PcVoltageMax}" />
+                    </StackPanel>
+                </Card>
+                <Card Header="SC - Master (스캔)" IconText="&#xea9a;">
+                    <Card.HeaderRight>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <ContentControl Content="{Binding ScanEnable}" />
+                        </StackPanel>
+                    </Card.HeaderRight>
+                    <StackPanel Spacing="8">
+                        <ContentControl Content="{Binding ScanAmplitude}" />
+                        <ContentControl Content="{Binding ScanOffset}" />
+                        <ContentControl Content="{Binding ScanFrequency}" />
+                    </StackPanel>
+                </Card>
+                <Card Header="CC - Amplifier (증폭기 전류)" IconText="&#xe242;" IsVisible="{Binding HasAmplifier}">
+                    <Card.HeaderRight>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Ellipse Classes="led" ToolTip.Tip="Emission" Classes.lit="{Binding AmpEmission.Led, Converter={x:Static conv:LedIsLitConverter.Instance}}" Fill="{Binding AmpEmission.Led, Converter={x:Static conv:LedBrushConverter.Instance}}" />
+                            <ContentControl Content="{Binding AmpEnable}" />
+                        </StackPanel>
+                    </Card.HeaderRight>
+                    <StackPanel Spacing="8">
+                        <ContentControl Content="{Binding AmpCurrentSet}" />
+                        <ContentControl Content="{Binding AmpCurrentAct}" />
+                        <ContentControl Content="{Binding AmpCurrentClip}" />
+                        <ContentControl Content="{Binding AmpStatus}" />
+                        <TextBlock Classes="info" Foreground="{DynamicResource AmberAccent}" Text="{Binding RampText}" IsVisible="{Binding RampText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        <IconButton Classes="small danger" IconText="&#xe3da;" Content="AMP OFF" Command="{Binding AmpOffCommand}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Card>
+                <Card Header="TC - Amplifier (증폭기 온도)" IconText="&#xe5c6;" IsVisible="{Binding HasAmplifier}">
+                    <Card.HeaderRight>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Ellipse Classes="led" ToolTip.Tip="Ready" Classes.lit="{Binding AmpTcReadyLed.Led, Converter={x:Static conv:LedIsLitConverter.Instance}}" Fill="{Binding AmpTcReadyLed.Led, Converter={x:Static conv:LedBrushConverter.Instance}}" />
+                            <ContentControl Content="{Binding AmpTcEnable}" />
+                        </StackPanel>
+                    </Card.HeaderRight>
+                    <StackPanel Spacing="8">
+                        <ContentControl Content="{Binding AmpTcTempSet}" />
+                        <ContentControl Content="{Binding AmpTcTempAct}" />
+                    </StackPanel>
+                </Card>
+                <Card Header="Power Limits (파워)" IconText="&#xe628;" IsVisible="{Binding HasAmplifier}">
+                    <StackPanel Spacing="8">
+                        <ContentControl Content="{Binding SeedPower}" />
+                        <ContentControl Content="{Binding OutputPower}" />
+                        <ContentControl Content="{Binding SeedPowerMin}" />
+                        <ContentControl Content="{Binding SeedLimits}" />
+                        <ContentControl Content="{Binding OutputLimits}" />
+                    </StackPanel>
+                </Card>
+                <Card Header="소프트웨어 안전 인터록" IconText="&#xe40c;" IsVisible="{Binding HasAmplifier}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="info" Text="{Binding SafetyInfo}" LineHeight="20" />
+                        <TextBlock Classes="hint" Text="설정은 Settings 페이지에서 바꿀 수 있습니다. 장비 자체의 seed/출력 보호(seed-limits, output-limits)는 항상 동작하며, 이 기능은 그 위에 추가되는 소프트웨어 보호입니다." />
+                        <IconButton Classes="small outline danger" IconText="&#xe3da;" Content="전체 OFF (AMP → Master)" Command="{Binding AllOffCommand}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Card>
+            </WrapPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
