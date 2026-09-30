@@ -1,0 +1,235 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:pages="using:DLC_PRO.ViewModels.Pages"
+             xmlns:conv="using:DLC_PRO.Converters"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="860"
+             x:Class="DLC_PRO.Views.Pages.WavemeterPageView"
+             x:DataType="pages:WavemeterPageViewModel"
+             Foreground="{DynamicResource PrimaryForeground}">
+    <UserControl.Styles>
+        <Style Selector="RadioButton">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="MinHeight" Value="26" />
+            <Setter Property="Margin" Value="0 0 14 0" />
+        </Style>
+        <Style Selector="TextBlock.big-result">
+            <Setter Property="FontFamily" Value="{DynamicResource MonoFontFamily}" />
+            <Setter Property="FontSize" Value="46" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{DynamicResource LightForeground}" />
+        </Style>
+        <Style Selector="TextBlock.status-item">
+            <Setter Property="FontFamily" Value="{DynamicResource MonoFontFamily}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryForeground}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto, *" ColumnDefinitions="480, *">
+        <!-- 페이지 헤더 -->
+        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="{DynamicResource PagePaddingFirst}" Spacing="2">
+            <TextBlock Classes="page-title" Text="{Binding Title}" />
+            <TextBlock Classes="page-subtitle" Text="{Binding Subtitle}" />
+        </StackPanel>
+
+        <!-- 왼쪽: WLM 조작부 (Wavelength Meter WS/6 VisIR 주 화면과 같은 항목) -->
+        <ScrollViewer Grid.Row="1" Grid.Column="0" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="28 0 12 20" Classes="cards">
+
+                <Card Header="연결 (wlmData.dll)" IconText="&#xe5da;">
+                    <Card.HeaderRight>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Classes="status" Text="{Binding OperationText}" VerticalAlignment="Center" />
+                            <Ellipse Classes="led"
+                                     Classes.lit="{Binding MeasureLed, Converter={x:Static conv:LedIsLitConverter.Instance}}"
+                                     Fill="{Binding MeasureLed, Converter={x:Static conv:LedBrushConverter.Instance}}" />
+                        </StackPanel>
+                    </Card.HeaderRight>
+                    <StackPanel Spacing="10">
+                        <TextBlock Classes="hint" Text="{Binding Wlm.Message}" />
+                        <TextBlock Text="{Binding Wlm.LastError}" FontSize="12.5" TextWrapping="Wrap" Foreground="{DynamicResource RedAccent}"
+                                   IsVisible="{Binding Wlm.LastError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <IconButton Classes="small"
+                                        Classes.outline="{Binding IsConnected}"
+                                        IconText="&#xe0f2;"
+                                        Content="{Binding ConnectButtonText}"
+                                        Command="{Binding ToggleConnectCommand}" />
+                            <IconButton Classes="small outline"
+                                        IconText="&#xe5da;"
+                                        Content="WLM 프로그램 실행"
+                                        Command="{Binding StartServerCommand}"
+                                        IsEnabled="{Binding !IsConnected}"
+                                        ToolTip.Tip="WLM 서버 프로그램이 꺼져 있으면 실행한 뒤 연결합니다 (ControlWLM)." />
+                        </StackPanel>
+                        <CheckBox Content="앱 시작 시 자동 연결" IsChecked="{Binding AutoConnect}" />
+                        <TextBlock Classes="hint" Text="WLM 프로그램(Wavelength Meter WS/6 VisIR)을 같은 PC에서 켜 둔 상태로 사용합니다. 이 화면의 설정 변경은 WLM 프로그램에도 그대로 반영됩니다." />
+                    </StackPanel>
+                </Card>
+
+                <Card Header="측정" IconText="&#xe154;">
+                    <StackPanel Spacing="10">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <IconButton Classes="success"
+                                        Classes.danger="{Binding IsMeasuring}"
+                                        Classes.success="{Binding !IsMeasuring}"
+                                        MinWidth="140"
+                                        IconText="{Binding StartIcon}"
+                                        Content="{Binding StartButtonText}"
+                                        Command="{Binding StartStopCommand}"
+                                        ToolTip.Tip="측정 시작/정지 (Operation). 시작하면 LongTerm 창이 열립니다." />
+                            <IconButton Classes="outline"
+                                        IconText="&#xe154;"
+                                        Content="LongTerm 창"
+                                        Command="{Binding OpenLongTermCommand}"
+                                        ToolTip.Tip="WLM LongTerm graph 창 열기 (별도 창)" />
+                        </StackPanel>
+                        <CheckBox Content="Start 시 LongTerm graph 창 열기" IsChecked="{Binding OpenLongTermOnStart}" />
+                        <TextBlock Classes="hint" Text="{Binding RateText}" />
+                    </StackPanel>
+                </Card>
+
+                <Card Header="Result unit" IconText="&#xe1d6;">
+                    <WrapPanel IsEnabled="{Binding CanEdit}">
+                        <RadioButton GroupName="wlmUnit" Content="Wavelength vac. [nm]" IsChecked="{Binding ResultMode, Converter={x:Static conv:IntEqualsConverter.Instance}, ConverterParameter=0}" />
+                        <RadioButton GroupName="wlmUnit" Content="Wavelength air [nm]" IsChecked="{Binding ResultMode, Converter={x:Static conv:IntEqualsConverter.Instance}, ConverterParameter=1}" />
+                        <RadioButton GroupName="wlmUnit" Content="Frequency [THz]" IsChecked="{Binding ResultMode, Converter={x:Static conv:IntEqualsConverter.Instance}, ConverterParameter=2}" />
+                        <RadioButton GroupName="wlmUnit" Content="Wavenumber [1/cm]" IsChecked="{Binding ResultMode, Converter={x:Static conv:IntEqualsConverter.Instance}, ConverterParameter=3}" />
+                        <RadioButton GroupName="wlmUnit" Content="Photon energy [eV]" IsChecked="{Binding ResultMode, Converter={x:Static conv:IntEqualsConverter.Instance}, ConverterParameter=4}" />
+                    </WrapPanel>
+                </Card>
+
+                <Card Header="Range · Pulse · Precision" IconText="&#xea9a;">
+                    <StackPanel Spacing="8" IsEnabled="{Binding CanEdit}">
+                        <Grid ColumnDefinitions="110, *">
+                            <TextBlock Classes="row-label" Text="Range" />
+                            <ComboBox Grid.Column="1" Classes="param" HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding RangeNames}"
+                                      SelectedIndex="{Binding RangeIndex}"
+                                      IsEnabled="{Binding RangeAvailable}"
+                                      PlaceholderText="범위 선택 없음" />
+                        </Grid>
+                        <Grid ColumnDefinitions="110, *">
+                            <TextBlock Classes="row-label" Text="Pulse" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <RadioButton GroupName="wlmPulse" Content="Continuous" IsChecked="{Binding PulseMode, Converter={x:Static conv:IntEqualsConverter.Instance}, ConverterParameter=0}" />
+                                <RadioButton GroupName="wlmPulse" Content="Pulsed" IsChecked="{Binding PulseMode, Converter={x:Static conv:IntEqualsConverter.Instance}, ConverterParameter=1}" />
+                            </StackPanel>
+                        </Grid>
+                        <Grid ColumnDefinitions="110, *">
+                            <TextBlock Classes="row-label" Text="Precision" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <RadioButton GroupName="wlmWide" Content="Fine" IsChecked="{Binding WideMode, Converter={x:Static conv:IntEqualsConverter.Instance}, ConverterParameter=0}" />
+                                <RadioButton GroupName="wlmWide" Content="Wide" IsChecked="{Binding WideMode, Converter={x:Static conv:IntEqualsConverter.Instance}, ConverterParameter=1}" />
+                            </StackPanel>
+                        </Grid>
+                        <CheckBox Content="Fast (빠른 측정)" IsChecked="{Binding FastMode}" />
+                    </StackPanel>
+                </Card>
+
+                <Card Header="Exposure · Interval" IconText="&#xe19a;">
+                    <StackPanel Spacing="8" IsEnabled="{Binding CanEdit}">
+                        <Grid ColumnDefinitions="110, *, Auto" ColumnSpacing="8">
+                            <TextBlock Classes="row-label" Text="Expo. 1 [ms]" />
+                            <ParamNumericUpDown Grid.Column="1" CommittedValue="{Binding Exposure}" FormatString="0"
+                                                Increment="1" Minimum="{Binding ExposureMin}" Maximum="{Binding ExposureMax}"
+                                                IsEnabled="{Binding !ExposureAuto}" />
+                            <CheckBox Grid.Column="2" Content="Automatic" IsChecked="{Binding ExposureAuto}" />
+                        </Grid>
+                        <Grid ColumnDefinitions="110, *, Auto" ColumnSpacing="8">
+                            <TextBlock Classes="row-label" Text="Interval [ms]" />
+                            <ParamNumericUpDown Grid.Column="1" CommittedValue="{Binding Interval}" FormatString="0"
+                                                Increment="10" Minimum="0" Maximum="9999990"
+                                                IsEnabled="{Binding IntervalMode}" />
+                            <CheckBox Grid.Column="2" Content="사용" IsChecked="{Binding IntervalMode}" />
+                        </Grid>
+                    </StackPanel>
+                </Card>
+
+                <Card Header="Autocalibration · Average" IconText="&#xe628;">
+                    <StackPanel Spacing="8" IsEnabled="{Binding CanEdit}">
+                        <CheckBox Content="Autocalibration" IsChecked="{Binding AutoCal}" />
+                        <Grid ColumnDefinitions="110, *, 150" ColumnSpacing="8">
+                            <TextBlock Classes="row-label" Text="AutoCal each" />
+                            <ParamNumericUpDown Grid.Column="1" CommittedValue="{Binding AutoCalPeriod}" FormatString="0"
+                                                Increment="1" Minimum="1" Maximum="100000" IsEnabled="{Binding AutoCal}" />
+                            <ComboBox Grid.Column="2" Classes="param" HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding AutoCalUnits}" SelectedIndex="{Binding AutoCalUnit}"
+                                      IsEnabled="{Binding AutoCal}" />
+                        </Grid>
+                        <Border Height="1" Margin="0 4" Background="{DynamicResource CardBorderSubtle}" />
+                        <Grid ColumnDefinitions="110, *, 150" ColumnSpacing="8">
+                            <TextBlock Classes="row-label" Text="Average Cnt" />
+                            <ParamNumericUpDown Grid.Column="1" CommittedValue="{Binding AverageCount}" FormatString="0"
+                                                Increment="1" Minimum="1" Maximum="1000" />
+                            <ComboBox Grid.Column="2" Classes="param" HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding AverageModes}" SelectedIndex="{Binding AverageModeIndex}" />
+                        </Grid>
+                        <CheckBox Content="Pattern (패턴 평균)" IsChecked="{Binding AveragePattern}" />
+                    </StackPanel>
+                </Card>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 오른쪽: 결과 + 간섭 패턴 -->
+        <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="Auto, *" Margin="12 0 28 20">
+            <Card Header="{Binding ResultName}" IconText="&#xe1d6;">
+                <Card.HeaderRight>
+                    <StackPanel Orientation="Horizontal" Spacing="14">
+                        <TextBlock Classes="status-item" Text="{Binding TemperatureText}" />
+                        <TextBlock Classes="status-item" Text="{Binding PressureText}" />
+                        <TextBlock Classes="status-item" Text="{Binding LinkText}" />
+                        <TextBlock Classes="status-item" Text="{Binding OperationText}" Foreground="{DynamicResource LightForeground}" />
+                    </StackPanel>
+                </Card.HeaderRight>
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
+                        <TextBlock Classes="big-result" Text="{Binding ResultText}" />
+                        <TextBlock Text="{Binding ResultUnit}" FontSize="20" VerticalAlignment="Bottom" Margin="0 0 0 8"
+                                   Foreground="{DynamicResource SecondaryForeground}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding ResultError}" HorizontalAlignment="Right" FontSize="15" FontWeight="Bold"
+                               Foreground="{DynamicResource RedAccent}"
+                               IsVisible="{Binding ResultError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    <Grid ColumnDefinitions="*, *, *, *, *" ColumnSpacing="10">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Classes="row-label" Text="vac. [nm]" />
+                            <Border Classes="readout"><TextBlock Classes="readout" Text="{Binding VacText}" /></Border>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="2">
+                            <TextBlock Classes="row-label" Text="air [nm]" />
+                            <Border Classes="readout"><TextBlock Classes="readout" Text="{Binding AirText}" /></Border>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="2">
+                            <TextBlock Classes="row-label" Text="Frequency [THz]" />
+                            <Border Classes="readout"><TextBlock Classes="readout" Text="{Binding FreqText}" /></Border>
+                        </StackPanel>
+                        <StackPanel Grid.Column="3" Spacing="2">
+                            <TextBlock Classes="row-label" Text="Wavenumber [1/cm]" />
+                            <Border Classes="readout"><TextBlock Classes="readout" Text="{Binding WaveNumberText}" /></Border>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4" Spacing="2">
+                            <TextBlock Classes="row-label" Text="Photon energy [eV]" />
+                            <Border Classes="readout"><TextBlock Classes="readout" Text="{Binding EnergyText}" /></Border>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Card>
+
+            <Card Grid.Row="1" Margin="0 16 0 0" Header="Interferometer pattern (Show signal)" IconText="&#xea9a;">
+                <Card.HeaderRight>
+                    <CheckBox Content="Show signal" IsChecked="{Binding ShowSignal}"
+                              ToolTip.Tip="간섭 패턴 내보내기 (SetPattern). 켜면 측정 속도가 조금 느려질 수 있습니다." />
+                </Card.HeaderRight>
+                <Panel>
+                    <PlotView Model="{Binding PatternPlot}" IsVisible="{Binding ShowSignal}" />
+                    <TextBlock Classes="hint" IsVisible="{Binding !ShowSignal}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                               Text="Show signal을 켜면 WLM의 간섭 패턴을 표시합니다." />
+                </Panel>
+            </Card>
+        </Grid>
+    </Grid>
+</UserControl>

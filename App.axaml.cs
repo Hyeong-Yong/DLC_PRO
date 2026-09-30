@@ -1,5 +1,6 @@
 using System;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Metadata;
@@ -27,10 +28,16 @@ namespace DLC_PRO {
             MainViewModel main = _services.GetRequiredService<MainViewModel>();
 
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
+                // LongTerm 창(별도 창)이 열려 있어도 메인 창을 닫으면 앱 종료
+                desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
+                ServiceProvider sp = _services;
+                if (Array.IndexOf(desktop.Args ?? Array.Empty<string>(), "--wlm-sim") >= 0)
+                    sp.GetRequiredService<WavemeterService>().UseSimulator = true;
                 desktop.MainWindow = new MainWindow { DataContext = main };
                 // ShutdownRequested는 창 닫기 확인보다 먼저 발생하므로 여기서 정리하면 안 된다 (증폭기 ON 종료 확인이 무력화됨)
                 desktop.Exit += (_, _) => DisposeServices();
                 HandleArgs(main, desktop.Args ?? Array.Empty<string>());
+                Avalonia.Threading.Dispatcher.UIThread.Post(async () => await sp.GetRequiredService<ViewModels.Pages.WavemeterPageViewModel>().AutoConnectIfEnabledAsync());
             }
             else if (ApplicationLifetime is ISingleViewApplicationLifetime singleView) {
                 singleView.MainView = new MainView { DataContext = main };
@@ -55,6 +62,7 @@ namespace DLC_PRO {
             _services = null;
             if (sp == null) return;
             try {
+                sp.GetService<WavemeterService>()?.Dispose();
                 sp.GetService<DeviceService>()?.Dispose();
                 sp.GetService<LogService>()?.Dispose();
             }

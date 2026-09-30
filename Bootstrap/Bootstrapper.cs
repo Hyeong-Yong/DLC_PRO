@@ -5,6 +5,7 @@ using DLC_PRO.Services;
 using DLC_PRO.ViewModels;
 using DLC_PRO.ViewModels.Dialogs;
 using DLC_PRO.ViewModels.Pages;
+using DLC_PRO.ViewModels.Wavemeter;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DLC_PRO.Bootstrap {
@@ -16,6 +17,12 @@ namespace DLC_PRO.Bootstrap {
             collection.AddSingleton<DeviceService>();
             collection.AddSingleton<DialogService>();
             collection.AddSingleton<Func<IDialogProvider>>(sp => () => sp.GetRequiredService<MainViewModel>());
+
+            // 파장계 (HighFinesse WS/6, DLC pro 연결과 독립) + 별도 LongTerm 창
+            collection.AddSingleton<WavemeterService>();
+            collection.AddSingleton<IWindowService, WindowService>();
+            collection.AddSingleton<LongTermViewModel>();
+            collection.AddSingleton<WavemeterPageViewModel>();
 
             // 메인 / 페이지 ViewModel (싱글톤: 장비 구독/기록 상태를 유지)
             collection.AddSingleton<MainViewModel>();

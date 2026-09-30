@@ -14,6 +14,14 @@ namespace DLC_PRO.Models.Plot {
         public string Name = "";
         public float[]? X;
         public float[]? Y;
+        /// <summary>
+        /// 배정밀도 데이터 (설정하면 X/Y 대신 사용). 파장계처럼 유효숫자가 float(7자리)보다 많은 값용.
+        /// </summary>
+        public double[]? XD, YD;
+
+        /// <summary>그릴 점 수.</summary>
+        public int Count => XD != null && YD != null ? Math.Min(XD.Length, YD.Length)
+            : X != null && Y != null ? Math.Min(X.Length, Y.Length) : 0;
         /// <summary>0xAARRGGBB</summary>
         public uint Color = PlotColors.Trace1;
         public float Width = 1.3f;
@@ -75,6 +83,11 @@ namespace DLC_PRO.Models.Plot {
         public string Overlay = "";
         public double MinYSpan, MinY2Span;
 
+        /// <summary>
+        /// 자동 스케일일 때 쓸 고정 범위 (null이면 데이터에 맞춤). 예: LongTerm 창의 페이지 단위 가로축, Vert. axis Fixed.
+        /// </summary>
+        public double? XMin, XMax, YMin, YMax;
+
         /// <summary>자동 스케일 여부 (사용자가 드래그/휠로 확대하면 View가 false로 바꾼다).</summary>
         public bool AutoScaleX = true, AutoScaleY = true;
 
@@ -97,7 +110,7 @@ namespace DLC_PRO.Models.Plot {
         public bool HasData {
             get {
                 foreach (PlotSeries s in Series)
-                    if (s.Visible && s.X != null && s.Y != null && s.X.Length > 0) return true;
+                    if (s.Visible && s.Count > 0) return true;
                 return false;
             }
         }
@@ -106,9 +119,9 @@ namespace DLC_PRO.Models.Plot {
         public void SaveCsv(string path) {
             CultureInfo inv = CultureInfo.InvariantCulture;
             List<PlotSeries> list = new List<PlotSeries>();
-            foreach (PlotSeries s in Series) if (s.Visible && s.X != null && s.Y != null) list.Add(s);
+            foreach (PlotSeries s in Series) if (s.Visible && s.Count > 0) list.Add(s);
             int max = 0;
-            foreach (PlotSeries s in list) max = Math.Max(max, Math.Min(s.X!.Length, s.Y!.Length));
+            foreach (PlotSeries s in list) max = Math.Max(max, s.Count);
             using StreamWriter w = new StreamWriter(path, false, new UTF8Encoding(true));
             w.WriteLine("# x: " + XLabel + " / y: " + YLabel + (string.IsNullOrEmpty(Y2Label) ? "" : " / y2: " + Y2Label));
             StringBuilder h = new StringBuilder();
@@ -120,9 +133,10 @@ namespace DLC_PRO.Models.Plot {
             for (int i = 0; i < max; i++) {
                 StringBuilder r = new StringBuilder();
                 foreach (PlotSeries s in list) {
-                    int n = Math.Min(s.X!.Length, s.Y!.Length);
-                    if (i < n) r.Append(s.X[i].ToString("R", inv)).Append(',').Append(s.Y[i].ToString("R", inv)).Append(',');
-                    else r.Append(",,");
+                    int n = s.Count;
+                    if (i >= n) r.Append(",,");
+                    else if (s.XD != null && s.YD != null) r.Append(s.XD[i].ToString("R", inv)).Append(',').Append(s.YD[i].ToString("R", inv)).Append(',');
+                    else r.Append(s.X![i].ToString("R", inv)).Append(',').Append(s.Y![i].ToString("R", inv)).Append(',');
                 }
                 w.WriteLine(r.ToString().TrimEnd(','));
             }

@@ -150,12 +150,19 @@ namespace DLC_PRO.Controls {
             return d;
         }
 
-        private static bool AllFinite(float[] y, int n) {
-            for (int i = 0; i < n; i++) if (float.IsNaN(y[i]) || float.IsInfinity(y[i])) return false;
+        private static double[] Trim(double[] d, int n) {
+            if (d.Length == n) return d;
+            double[] r = new double[n];
+            Array.Copy(d, r, n);
+            return r;
+        }
+
+        private static bool AllFinite(double[] y, int n) {
+            for (int i = 0; i < n; i++) if (double.IsNaN(y[i]) || double.IsInfinity(y[i])) return false;
             return true;
         }
 
-        private static bool IsAscending(float[] x, int n) {
+        private static bool IsAscending(double[] x, int n) {
             for (int i = 1; i < n; i++) if (!(x[i] >= x[i - 1])) return false;
             return true;
         }
@@ -172,11 +179,12 @@ namespace DLC_PRO.Controls {
             int named = 0;
 
             foreach (PlotSeries s in m.Series) {
-                if (!s.Visible || s.X == null || s.Y == null) continue;
-                int n = Math.Min(s.X.Length, s.Y.Length);
+                if (!s.Visible) continue;
+                int n = s.Count;
                 if (n == 0) continue;
-                double[] xs = D(s.X, n), ys = D(s.Y, n);
-                if (!s.Points && n > 5000 && IsAscending(s.X, n) && AllFinite(s.Y, n)) {
+                bool dbl = s.XD != null && s.YD != null;
+                double[] xs = dbl ? Trim(s.XD!, n) : D(s.X!, n), ys = dbl ? Trim(s.YD!, n) : D(s.Y!, n);
+                if (!s.Points && n > 5000 && IsAscending(xs, n) && AllFinite(ys, n)) {
                     // 대용량 + x 단조증가 (레코더/와이드스캔): SignalXY 가 훨씬 빠름
                     ScottPlot.Plottables.SignalXY sig = plot.Add.SignalXY(xs, ys, C(s.Color));
                     sig.LineWidth = s.Width;
@@ -274,6 +282,11 @@ namespace DLC_PRO.Controls {
                 Widen(plot, plot.Axes.Left, m.MinYSpan);
                 if (usesY2) Widen(plot, plot.Axes.Right, m.MinY2Span);
             }
+            // 고정 범위 (자동 스케일 상태에서만 — 사용자가 확대/이동하면 그 범위를 유지)
+            if (m.AutoScaleX && m.XMin.HasValue && m.XMax.HasValue && m.XMax.Value > m.XMin.Value)
+                plot.Axes.SetLimitsX(m.XMin.Value, m.XMax.Value);
+            if (m.AutoScaleY && m.YMin.HasValue && m.YMax.HasValue && m.YMax.Value > m.YMin.Value)
+                plot.Axes.SetLimitsY(m.YMin.Value, m.YMax.Value, plot.Axes.Left);
             _plot.Refresh();
         }
 

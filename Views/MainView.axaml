@@ -36,6 +36,9 @@
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Spacing="10">
                         <Button Classes="subtle" HorizontalAlignment="Stretch" Command="{Binding GoToHardwareCommand}" Content="하드웨어 상태" />
+                        <IconButton Classes="subtle" IconText="&#xe1d6;" HorizontalAlignment="Stretch" Classes.active="{Binding WavemeterPageIsActive}" Command="{Binding GoToWavemeterCommand}" ToolTip.Tip="Wavemeter (HighFinesse WS/6)">
+                            <Label Content="Wavemeter" IsVisible="{Binding SideMenuExpanded}" />
+                        </IconButton>
                         <TextBlock Text="{Binding SelectedLaserText}" FontWeight="Bold" Margin="4 6" IsVisible="{Binding SideMenuExpanded}" />
                         <IconButton Classes="subtle" IconText="&#xe2de;" HorizontalAlignment="Stretch" Classes.active="{Binding LaserPageIsActive}" Command="{Binding GoToLaserCommand}" IsEnabled="{Binding CanUseLaserControls}" ToolTip.Tip="Laser">
                             <Label Content="Laser" IsVisible="{Binding SideMenuExpanded}" />
@@ -143,6 +146,17 @@
                                  Fill="{Binding LockLed, Converter={x:Static conv:LedBrushConverter.Instance}}" />
                         <TextBlock Classes="status" Text="{Binding LockText}" FontWeight="Bold" Foreground="{DynamicResource LightForeground}" />
                         <TextBlock Classes="status" Classes.bad="{Binding HealthIsBad}" Text="{Binding HealthText}" Margin="6 0 0 0" />
+                        <Button Classes="transparent" Padding="6 0" Margin="6 0 0 0" Command="{Binding GoToWavemeterCommand}" ToolTip.Tip="{Binding WlmToolTip}"
+                                IsVisible="{Binding WlmText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Border Width="1" Height="24" Background="{DynamicResource CardBorderSubtle}" Margin="0 0 4 0" />
+                                <TextBlock Classes="status" Text="WLM" />
+                                <Ellipse Classes="led"
+                                         Classes.lit="{Binding WlmLed, Converter={x:Static conv:LedIsLitConverter.Instance}}"
+                                         Fill="{Binding WlmLed, Converter={x:Static conv:LedBrushConverter.Instance}}" />
+                                <TextBlock Classes="status" Text="{Binding WlmText}" FontWeight="Bold" FontFamily="{DynamicResource MonoFontFamily}" Foreground="{DynamicResource LightForeground}" />
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
 
                     <!-- 비상 버튼 -->

@@ -3,6 +3,7 @@ namespace DLC_PRO.Data {
     public enum ApplicationPageNames {
         Unknown,
         Hardware,
+        Wavemeter,
         Laser,
         ScanLock,
         Relock,

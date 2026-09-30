@@ -26,6 +26,8 @@ namespace DLC_PRO.ViewModels {
         private PageFactory _pageFactory;
         private readonly DeviceService _controller;
         private readonly HardwarePageViewModel _hardware;
+        private readonly WavemeterPageViewModel _wavemeter;
+        private readonly WavemeterService _wlm;
         private readonly Dictionary<int, (DeviceService Dev, PageFactory Pages)> _workspaces = new();
         private DeviceService _dev;
         private readonly DialogService _dialogs;
@@ -33,10 +35,13 @@ namespace DLC_PRO.ViewModels {
         private bool _tripDialogOpen;
         private bool _closingConfirmed;
 
-        public MainViewModel(PageFactory pageFactory, DeviceService dev, DialogService dialogs, LogService log) {
+        public MainViewModel(PageFactory pageFactory, DeviceService dev, DialogService dialogs, LogService log,
+                             WavemeterService wlm, WavemeterPageViewModel wavemeter) {
             _pageFactory = pageFactory;
             _controller = dev;
             _hardware = new HardwarePageViewModel(dev, OpenLaser);
+            _wlm = wlm;
+            _wavemeter = wavemeter;
             _workspaces[1] = (dev, pageFactory);
             _dev = dev;
             _dialogs = dialogs;
@@ -76,7 +81,7 @@ namespace DLC_PRO.ViewModels {
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(LaserPageIsActive), nameof(ScanLockPageIsActive), nameof(RelockPageIsActive),
             nameof(StabilizationPageIsActive), nameof(WideScanPageIsActive), nameof(RecorderPageIsActive),
-            nameof(SystemPageIsActive), nameof(ConsolePageIsActive), nameof(SettingsPageIsActive), nameof(HardwarePageIsActive), nameof(CanUseLaserControls), nameof(CanUseCurrentPage))]
+            nameof(SystemPageIsActive), nameof(ConsolePageIsActive), nameof(SettingsPageIsActive), nameof(HardwarePageIsActive), nameof(WavemeterPageIsActive), nameof(CanUseLaserControls), nameof(CanUseCurrentPage))]
         private PageViewModel _currentPage;
 
         [ObservableProperty]
@@ -86,14 +91,16 @@ namespace DLC_PRO.ViewModels {
         public bool IsDialogOpen => Dialog?.IsDialogOpen == true;
 
         public bool HardwarePageIsActive => CurrentPage.PageName == ApplicationPageNames.Hardware;
+        public bool WavemeterPageIsActive => CurrentPage.PageName == ApplicationPageNames.Wavemeter;
         public bool CanUseLaserControls => IsConnected && !IsConnecting && SelectedLaserId > 0 && !IsDialogOpen;
         public bool CanUseCurrentPage => !IsDialogOpen && !IsConnecting &&
-            (HardwarePageIsActive || SettingsPageIsActive || (SystemPageIsActive && IsConnected) || CanUseLaserControls);
+            (HardwarePageIsActive || WavemeterPageIsActive || SettingsPageIsActive || (SystemPageIsActive && IsConnected) || CanUseLaserControls);
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(CanUseLaserControls), nameof(CanUseCurrentPage), nameof(SelectedLaserText))]
         private int _selectedLaserId;
         public string SelectedLaserText => SelectedLaserId > 0 ? $"Laser {SelectedLaserId} 제어" : "레이저 선택 전";
         [RelayCommand] private void GoToHardware() => CurrentPage = _hardware;
+        [RelayCommand] private void GoToWavemeter() => CurrentPage = _wavemeter;
         private void OpenLaser(int id) {
             if (!_controller.IsConnected || !_workspaces.TryGetValue(id, out var workspace)) return;
             CurrentPage.IsActive = false;
@@ -169,6 +176,7 @@ namespace DLC_PRO.ViewModels {
                 if (!p.ToString().StartsWith(name.Replace("&", "").Replace(" ", ""), StringComparison.OrdinalIgnoreCase)) continue;
                 switch (p) {
                     case ApplicationPageNames.Hardware: GoToHardware(); return;
+                    case ApplicationPageNames.Wavemeter: GoToWavemeter(); return;
                     case ApplicationPageNames.Laser: GoToLaser(); return;
                     case ApplicationPageNames.ScanLock: GoToScanLock(); return;
                     case ApplicationPageNames.Relock: GoToRelock(); return;
@@ -311,12 +319,17 @@ namespace DLC_PRO.ViewModels {
         [ObservableProperty] private string _userLevelText = "UL -";
         [ObservableProperty] private string _messagesText = "";
         [ObservableProperty] private string _windowTitle = "DLC pro Control";
+        /// <summary>상단 바의 파장계 현재 값 (어느 페이지에서나 보이도록).</summary>
+        [ObservableProperty] private string _wlmText = "";
+        [ObservableProperty] private string _wlmToolTip = "";
+        [ObservableProperty] private LedState _wlmLed;
 
         public LogService Log => _log;
 
         [ObservableProperty] private bool _logExpanded = true;
 
         private void OnTick() {
+            UpdateWavemeterReadout();
             DlcDevice d = _dev.Device;
             bool con = d.IsConnected;
             IsConnected = con;
@@ -342,6 +355,25 @@ namespace DLC_PRO.ViewModels {
             int nm = d.GetInt(P.MsgCountNew, 0);
             MessagesText = con && nm > 0 ? "새 시스템 메시지 " + nm + "개" : "";
             WindowTitle = "DLC pro Control · " + SelectedLaserText + (con ? " — " + (d.GetString(P.LaserType) ?? "") + " @ " + d.Endpoint : "");
+        }
+
+        private void UpdateWavemeterReadout() {
+            if (!_wlm.IsConnected) {
+                WlmText = "";
+                WlmLed = LedState.Off;
+                return;
+            }
+            WlmStatus s = _wlm.Status;
+            double vac = _wlm.LastVacuumNm;
+            int unit = s.ResultMode >= 0 && s.ResultMode <= 4 ? s.ResultMode : 0;
+            bool measuring = s.ServerRunning && s.OperationState == Core.Wlm.WlmConst.cMeasurement;
+            if (!s.ServerRunning) WlmText = "WLM 서버 없음";
+            else if (Core.Wlm.WlmUnits.IsValid(vac))
+                WlmText = Core.Wlm.WlmUnits.Format(Core.Wlm.WlmUnits.FromVacuum(vac, unit, s.AirRatio), unit) + " " + Core.Wlm.WlmUnits.Unit(unit)
+                          + (measuring ? "" : " (paused)");
+            else WlmText = double.IsNaN(vac) ? (measuring ? "측정 대기" : "paused") : Core.Wlm.WlmUnits.ErrorText(vac);
+            WlmLed = !s.ServerRunning ? LedState.Error : measuring ? (Core.Wlm.WlmUnits.IsValid(vac) ? LedState.On : LedState.Warn) : LedState.Info;
+            WlmToolTip = "파장계 " + Core.Wlm.WlmUnits.Name(unit) + " · 클릭하면 Wavemeter 페이지로 이동";
         }
 
         private async void OnSafetyTripped(string reason) {

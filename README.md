@@ -14,6 +14,12 @@ dotnet run --project DLC_PRO.csproj
 
 **장비 보호값은 읽기 전용입니다.** Maximum Current, 공장값, 교정 계수는 변경할 수 없습니다. Console은 단일 조회 명령만 허용하며, Maintenance/Service 권한 상승은 차단됩니다. Settings의 **앱 전류 상한**은 장비 공장값을 바꾸지 않는 소프트웨어 제한입니다. 자세한 범위는 [읽기 전용 보호](Docs/보호값_읽기전용.md)를 참고하세요.
 
+## 파장계 (HighFinesse WS/6)
+
+사이드 메뉴 **Wavemeter**에서 WLM 주 화면의 설정(Result unit, Range, Pulse, Precision, Exposure, Interval, Autocalibration, Average)을 조작합니다. **Start**를 누르면 측정을 시작하고 **WLM LongTerm graph** 창이 별도 창으로 열립니다. 레이저 제어 창과 나란히 파장이나 주파수 추세를 볼 수 있습니다. 상단 바에도 WLM 현재 값이 표시됩니다.
+
+WLM 프로그램(`Wavelength Meter WS/6 VisIR`)을 같은 PC에서 켜 둔 상태로 사용합니다. 통신은 설치된 `System32\wlmData.dll`로 합니다. 연결 해제나 앱 종료는 WLM 측정 상태를 바꾸지 않습니다. 실제 장비 없이 화면을 확인하려면 `dotnet run --project DLC_PRO.csproj -- --wlm-sim`을 실행합니다. 자세한 내용은 [파장계 연동](Docs/파장계_WLM_연동.md)을 참고하세요.
+
 ## 검증
 
 ```powershell
@@ -21,10 +27,11 @@ dotnet build DLC_PRO.csproj -c Release
 dotnet run --project Tests/DLC_PRO.Tests.csproj
 ```
 
-테스트는 로컬 TCP/UDP 시뮬레이터와 Avalonia Headless를 사용합니다. 실제 장비에는 접속하지 않습니다. UI 스크린샷은 `Tests/artifacts/`에 생성됩니다. Windows의 한글 글꼴(맑은 고딕)을 기준으로 표시를 검증했습니다.
+테스트는 로컬 TCP/UDP 시뮬레이터와 Avalonia Headless를 사용합니다. 실제 장비에는 접속하지 않습니다. 파장계 테스트(`-- --ui`)는 WLM 시뮬레이터만 사용하며 실제 wlmData.dll을 호출하지 않습니다. UI 스크린샷은 `Tests/artifacts/`에 생성됩니다. Windows의 한글 글꼴(맑은 고딕)을 기준으로 표시를 검증했습니다.
 
 ## 작업 기록
 
 - [기존 작업 내용](Docs/DLC_PRO_작업내용.html)
 - [기존 안전성 검토](Docs/검토_수정_2026-09-29.md)
 - [연결 경고·다중 레이저·그래프 및 추가 버그 수정](Docs/업데이트_2026-09-30.md)
+- [파장계(WS/6) 연동 · LongTerm 창](Docs/파장계_WLM_연동.md)

@@ -1,0 +1,149 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:wm="using:DLC_PRO.ViewModels.Wavemeter"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="640"
+        x:Class="DLC_PRO.Views.LongTermWindow"
+        x:DataType="wm:LongTermViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="WLM LongTerm graph"
+        Width="980" Height="620" MinWidth="640" MinHeight="420"
+        WindowStartupLocation="CenterScreen"
+        Topmost="{Binding Topmost}"
+        Background="{DynamicResource PrimaryBackground}"
+        Foreground="{DynamicResource PrimaryForeground}">
+    <Window.Styles>
+        <Style Selector="Border.group">
+            <Setter Property="Background" Value="{DynamicResource CardBackground}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="10 6" />
+            <Setter Property="Margin" Value="0 0 8 8" />
+        </Style>
+        <Style Selector="TextBlock.group-title">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{DynamicResource LabelForeground}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0 0 10 0" />
+        </Style>
+        <Style Selector="RadioButton">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="MinHeight" Value="24" />
+            <Setter Property="Margin" Value="0 0 8 0" />
+        </Style>
+        <Style Selector="TextBlock.stat-label">
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryForeground}" />
+        </Style>
+        <Style Selector="TextBlock.stat-value">
+            <Setter Property="FontFamily" Value="{DynamicResource MonoFontFamily}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{DynamicResource LightForeground}" />
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto, Auto, *, Auto" Margin="14 10 14 12">
+
+        <!-- 도구 막대 (LongTerm의 File / Recording / Appearance 메뉴에 해당) -->
+        <Grid ColumnDefinitions="*, Auto" Margin="0 0 0 8">
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <IconButton Classes="small" Classes.outline="{Binding !IsRecording}" Margin="0 0 8 4"
+                            IconText="{Binding RecordIcon}" Content="{Binding RecordButtonText}"
+                            Command="{Binding ToggleRecordingCommand}" ToolTip.Tip="Recording: 데이터 수집 시작/정지" />
+                <IconButton Classes="small outline alert" Margin="0 0 8 4" IconText="&#xe4a6;" Content="지우기"
+                            Command="{Binding ClearCommand}" ToolTip.Tip="Recording: 모든 데이터 지우기" />
+                <IconButton Classes="small outline" Margin="0 0 16 4" IconText="&#xe248;" Content="저장"
+                            Command="{Binding SaveCommand}" ToolTip.Tip="File: 탭 구분 텍스트로 저장 (오류 값 포함)" />
+                <ComboBox Classes="param" Width="210" Margin="0 0 10 4" ItemsSource="{Binding UnitChoices}" SelectedIndex="{Binding UnitIndex}"
+                          ToolTip.Tip="그래프 단위 (WLM 표시 단위를 따르거나 따로 선택)" />
+                <CheckBox Content="Δf [MHz]" IsChecked="{Binding DeltaMode}" Margin="0 0 6 4"
+                          ToolTip.Tip="기준 주파수 대비 차이를 MHz로 표시 (레이저 락 확인용)" />
+                <Button Classes="small outline" Content="Δ 기준 = 평균" Margin="0 0 16 4" Command="{Binding SetReferenceToMeanCommand}"
+                        IsEnabled="{Binding DeltaMode}" ToolTip.Tip="Δf 기준을 현재 통계 평균 주파수로" />
+                <Button Classes="small outline" Content="자동 스케일" Margin="0 0 10 4" Command="{Binding AutoScaleCommand}" />
+                <CheckBox Content="항상 위" IsChecked="{Binding Topmost}" Margin="0 0 0 4"
+                          ToolTip.Tip="메인 창(레이저 제어) 위에 항상 표시" />
+            </WrapPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top" Margin="8 4 0 0">
+                <TextBlock Classes="stat-label" Text="측정 수" VerticalAlignment="Center" />
+                <TextBlock Classes="stat-value" Text="{Binding CountText}" VerticalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+
+        <!-- LongTerm 조작 그룹 -->
+        <WrapPanel Grid.Row="1" Orientation="Horizontal">
+            <Border Classes="group">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Classes="group-title" Text="Horiz. axis" />
+                    <RadioButton GroupName="ltAxis" Content="Number" IsChecked="{Binding !TimeAxis}" />
+                    <RadioButton GroupName="ltAxis" Content="Time" IsChecked="{Binding TimeAxis}" />
+                    <ParamNumericUpDown Width="170" CommittedValue="{Binding PerPage}" FormatString="0" Increment="1000" Minimum="10" Maximum="1000000" />
+                    <TextBlock Classes="stat-label" Text="{Binding PerPageUnit}" VerticalAlignment="Center" />
+                    <CheckBox Content="Fixed" IsChecked="{Binding FixedX}" Margin="6 0 0 0"
+                              ToolTip.Tip="오른쪽 끝에 닿으면 반 페이지씩 이동 (해제 시 최근 구간이 계속 흐름)" />
+                </StackPanel>
+            </Border>
+            <Border Classes="group">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Classes="group-title" Text="Statistic" />
+                    <ComboBox Classes="param" Width="170" ItemsSource="{Binding StatModes}" SelectedIndex="{Binding StatModeIndex}" />
+                    <ParamNumericUpDown Width="150" CommittedValue="{Binding StatCount}" FormatString="0" Increment="10" Minimum="2" Maximum="1000000" />
+                    <TextBlock Classes="stat-label" Text="measurements" VerticalAlignment="Center" />
+                    <Button Classes="small outline" Content="Reset now" Margin="6 0 0 0" Command="{Binding ResetStatisticsCommand}"
+                            ToolTip.Tip="통계 리셋 (리셋 이후 전체 모드의 시작점)" />
+                </StackPanel>
+            </Border>
+            <Border Classes="group">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Classes="group-title" Text="Vert. axis" />
+                    <CheckBox Content="Fixed" IsChecked="{Binding FixedY}" />
+                    <TextBlock Classes="stat-label" Text="Min" VerticalAlignment="Center" />
+                    <ParamNumericUpDown Width="210" CommittedValue="{Binding YMin}" FormatString="{Binding YFormat}" Increment="{Binding YIncrement}"
+                                        Minimum="-1000000000" Maximum="1000000000" IsEnabled="{Binding FixedY}" />
+                    <TextBlock Classes="stat-label" Text="Max" VerticalAlignment="Center" />
+                    <ParamNumericUpDown Width="210" CommittedValue="{Binding YMax}" FormatString="{Binding YFormat}" Increment="{Binding YIncrement}"
+                                        Minimum="-1000000000" Maximum="1000000000" IsEnabled="{Binding FixedY}" />
+                </StackPanel>
+            </Border>
+        </WrapPanel>
+
+        <!-- 그래프 -->
+        <Border Grid.Row="2" Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource CardBorder}"
+                BorderThickness="1" CornerRadius="8" Padding="4" ClipToBounds="True">
+            <PlotView Model="{Binding Plot}" />
+        </Border>
+
+        <!-- 통계 -->
+        <Border Grid.Row="3" Margin="0 8 0 0" Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource CardBorder}"
+                BorderThickness="1" CornerRadius="8" Padding="12 8">
+            <Grid ColumnDefinitions="Auto, *" ColumnSpacing="20">
+                <StackPanel Spacing="1" MinWidth="230">
+                    <TextBlock Classes="stat-label" Text="Current" />
+                    <TextBlock Classes="stat-value" FontSize="20" FontWeight="Bold" Text="{Binding CurrentText}" />
+                    <TextBlock Text="{Binding CurrentError}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource RedAccent}"
+                               IsVisible="{Binding CurrentError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                </StackPanel>
+                <Grid Grid.Column="1" ColumnDefinitions="*, *, *, *, *, *, *" RowDefinitions="Auto, Auto, Auto" ColumnSpacing="12">
+                    <TextBlock Grid.Column="0" Classes="stat-label" Text="Mean" />
+                    <TextBlock Grid.Column="1" Classes="stat-label" Text="Std. dev." />
+                    <TextBlock Grid.Column="2" Classes="stat-label" Text="Minimum" />
+                    <TextBlock Grid.Column="3" Classes="stat-label" Text="Maximum" />
+                    <TextBlock Grid.Column="4" Classes="stat-label" Text="Max − Min" />
+                    <TextBlock Grid.Column="5" Classes="stat-label" Text="σ [MHz]" />
+                    <TextBlock Grid.Column="6" Classes="stat-label" Text="P-V [MHz]" />
+                    <TextBlock Grid.Row="1" Grid.Column="0" Classes="stat-value" Text="{Binding MeanText}" />
+                    <TextBlock Grid.Row="1" Grid.Column="1" Classes="stat-value" Text="{Binding StdText}" />
+                    <TextBlock Grid.Row="1" Grid.Column="2" Classes="stat-value" Text="{Binding MinText}" />
+                    <TextBlock Grid.Row="1" Grid.Column="3" Classes="stat-value" Text="{Binding MaxText}" />
+                    <TextBlock Grid.Row="1" Grid.Column="4" Classes="stat-value" Text="{Binding PvText}" />
+                    <TextBlock Grid.Row="1" Grid.Column="5" Classes="stat-value" Text="{Binding StdMhzText}" />
+                    <TextBlock Grid.Row="1" Grid.Column="6" Classes="stat-value" Text="{Binding PvMhzText}" />
+                    <TextBlock Grid.Row="2" Grid.ColumnSpan="7" Classes="stat-label" Margin="0 4 0 0" Text="{Binding StatInfo}" />
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
