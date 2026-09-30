@@ -23,8 +23,11 @@ namespace DLC_PRO.ViewModels {
     /// - 대화상자 호스트 (IDialogProvider)
     /// </summary>
     public partial class MainViewModel : ViewModelBase, IDialogProvider {
-        private readonly PageFactory _pageFactory;
-        private readonly DeviceService _dev;
+        private PageFactory _pageFactory;
+        private readonly DeviceService _controller;
+        private readonly HardwarePageViewModel _hardware;
+        private readonly Dictionary<int, (DeviceService Dev, PageFactory Pages)> _workspaces = new();
+        private DeviceService _dev;
         private readonly DialogService _dialogs;
         private readonly LogService _log;
         private bool _tripDialogOpen;
@@ -32,6 +35,9 @@ namespace DLC_PRO.ViewModels {
 
         public MainViewModel(PageFactory pageFactory, DeviceService dev, DialogService dialogs, LogService log) {
             _pageFactory = pageFactory;
+            _controller = dev;
+            _hardware = new HardwarePageViewModel(dev, OpenLaser);
+            _workspaces[1] = (dev, pageFactory);
             _dev = dev;
             _dialogs = dialogs;
             _log = log;
@@ -52,7 +58,8 @@ namespace DLC_PRO.ViewModels {
             _pageFactory.GetPageViewModel<SystemPageViewModel>();
             _pageFactory.GetPageViewModel<ConsolePageViewModel>();
             _pageFactory.GetPageViewModel<SettingsPageViewModel>();
-            _currentPage = _pageFactory.GetPageViewModel<LaserPageViewModel>();
+            _pageFactory.GetPageViewModel<LaserPageViewModel>();
+            _currentPage = _hardware;
             _currentPage.IsActive = true;
 
             dev.Tick += OnTick;
@@ -69,7 +76,7 @@ namespace DLC_PRO.ViewModels {
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(LaserPageIsActive), nameof(ScanLockPageIsActive), nameof(RelockPageIsActive),
             nameof(StabilizationPageIsActive), nameof(WideScanPageIsActive), nameof(RecorderPageIsActive),
-            nameof(SystemPageIsActive), nameof(ConsolePageIsActive), nameof(SettingsPageIsActive))]
+            nameof(SystemPageIsActive), nameof(ConsolePageIsActive), nameof(SettingsPageIsActive), nameof(HardwarePageIsActive), nameof(CanUseLaserControls), nameof(CanUseCurrentPage))]
         private PageViewModel _currentPage;
 
         [ObservableProperty]
@@ -77,6 +84,38 @@ namespace DLC_PRO.ViewModels {
         private DialogViewModel? _dialog;
 
         public bool IsDialogOpen => Dialog?.IsDialogOpen == true;
+
+        public bool HardwarePageIsActive => CurrentPage.PageName == ApplicationPageNames.Hardware;
+        public bool CanUseLaserControls => IsConnected && !IsConnecting && SelectedLaserId > 0 && !IsDialogOpen;
+        public bool CanUseCurrentPage => !IsDialogOpen && !IsConnecting &&
+            (HardwarePageIsActive || SettingsPageIsActive || (SystemPageIsActive && IsConnected) || CanUseLaserControls);
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanUseLaserControls), nameof(CanUseCurrentPage), nameof(SelectedLaserText))]
+        private int _selectedLaserId;
+        public string SelectedLaserText => SelectedLaserId > 0 ? $"Laser {SelectedLaserId} 제어" : "레이저 선택 전";
+        [RelayCommand] private void GoToHardware() => CurrentPage = _hardware;
+        private void OpenLaser(int id) {
+            if (!_controller.IsConnected || !_workspaces.TryGetValue(id, out var workspace)) return;
+            CurrentPage.IsActive = false;
+            foreach (var w in _workspaces.Values) w.Dev.Safety.CancelRamp();
+            _dev = workspace.Dev; _pageFactory = workspace.Pages; SelectedLaserId = id;
+            CurrentPage = _pageFactory.GetPageViewModel<LaserPageViewModel>();
+            CurrentPage.IsActive = true;
+        }
+        private void PrepareLaserMonitoring() {
+            foreach (var row in _hardware.Lasers) {
+                if (_workspaces.ContainsKey(row.Id)) continue;
+                int id = row.Id;
+                var service = _controller.CreateLaserService(id);
+                service.SafetyTripped += reason => OnSafetyTripped($"Laser {id}: " + reason);
+                _workspaces[id] = (service, PageFactory.ForLaser(service, _dialogs, _log));
+            }
+            foreach (var w in _workspaces.Values) {
+                bool present = false;
+                foreach (var row in _hardware.Lasers) if (row.Id == w.Dev.Device.LaserId) present = true;
+                w.Dev.Safety.MonitoringEnabled = present;
+            }
+        }
 
         public bool LaserPageIsActive => CurrentPage.PageName == ApplicationPageNames.Laser;
         public bool ScanLockPageIsActive => CurrentPage.PageName == ApplicationPageNames.ScanLock;
@@ -103,12 +142,14 @@ namespace DLC_PRO.ViewModels {
             if (e.PropertyName == nameof(DialogViewModel.IsDialogOpen)) {
                 OnPropertyChanged(nameof(IsDialogOpen));
                 OnPropertyChanged(nameof(CanEditConnection));
+                OnPropertyChanged(nameof(CanUseLaserControls));
+                OnPropertyChanged(nameof(CanUseCurrentPage));
             }
         }
 
         partial void OnSideMenuExpandedChanged(bool value) {
-            _dev.Settings.SideMenuExpanded = value;
-            _dev.SaveSettings();
+            _controller.Settings.SideMenuExpanded = value;
+            _controller.SaveSettings();
         }
 
         [RelayCommand] private void SideMenuResize() => SideMenuExpanded = !SideMenuExpanded;
@@ -127,6 +168,7 @@ namespace DLC_PRO.ViewModels {
             foreach (ApplicationPageNames p in Enum.GetValues<ApplicationPageNames>()) {
                 if (!p.ToString().StartsWith(name.Replace("&", "").Replace(" ", ""), StringComparison.OrdinalIgnoreCase)) continue;
                 switch (p) {
+                    case ApplicationPageNames.Hardware: GoToHardware(); return;
                     case ApplicationPageNames.Laser: GoToLaser(); return;
                     case ApplicationPageNames.ScanLock: GoToScanLock(); return;
                     case ApplicationPageNames.Relock: GoToRelock(); return;
@@ -162,12 +204,12 @@ namespace DLC_PRO.ViewModels {
         public ObservableCollection<string> ComPorts { get; } = new ObservableCollection<string>();
 
         [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(ConnectButtonText), nameof(CanEditConnection))]
+        [NotifyPropertyChangedFor(nameof(ConnectButtonText), nameof(CanEditConnection), nameof(CanUseLaserControls), nameof(CanUseCurrentPage))]
         [NotifyCanExecuteChangedFor(nameof(ToggleConnectCommand))]
         private bool _isConnecting;
 
         [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(ConnectButtonText), nameof(CanEditConnection), nameof(ConnectIcon))]
+        [NotifyPropertyChangedFor(nameof(ConnectButtonText), nameof(CanEditConnection), nameof(ConnectIcon), nameof(CanUseLaserControls), nameof(CanUseCurrentPage))]
         private bool _isConnected;
 
         public string ConnectButtonText => IsConnecting ? "연결 중..." : IsConnected ? "연결 해제" : "연결";
@@ -192,45 +234,59 @@ namespace DLC_PRO.ViewModels {
 
         [RelayCommand(CanExecute = nameof(CanToggleConnect))]
         private async Task ToggleConnectAsync() {
-            DlcDevice d = _dev.Device;
-            if (d.IsConnected) {
-                if (d.GetBool(P.AmpCcEnabled, false) || d.GetBool(P.LockEnabled, false)) {
-                    if (!await _dialogs.ConfirmAsync("연결 해제", "연결을 끊어도 장비는 현재 상태(전류, 락 등)를 유지합니다.\n연결을 끊을까요?"))
-                        return;
-                }
-                IsConnecting = true;
-                try { await _dev.DisconnectAsync(); }
-                catch (Exception ex) { _log.Error("연결 해제 오류: " + ex.Message); }
-                finally { IsConnecting = false; }
-                return;
-            }
             IsConnecting = true;
-            bool usb = IsUsb;
-            string host = (Host ?? "").Trim(), com = (ComPort ?? "").Trim();
             try {
-                if (usb) await _dev.ConnectSerialAsync(com);
-                else await _dev.ConnectTcpAsync(host);
-                _dev.Settings.ConnectionType = usb ? "USB" : "TCP";
-                if (usb) _dev.Settings.ComPort = com;
-                else _dev.Settings.Host = host;
-                _dev.SaveSettings();
+                if (_controller.IsConnected) {
+                    if (!await _dialogs.ConfirmAsync("연결 해제", "연결을 끊어도 레이저 출력과 락은 현재 상태를 유지합니다. 연결을 끊을까요?")) return;
+                    foreach (var w in _workspaces.Values) w.Dev.Safety.CancelRamp();
+                    await _controller.DisconnectAsync();
+                    SelectedLaserId = 0; CurrentPage = _hardware;
+                    return;
+                }
+                bool usb = IsUsb;
+                string endpoint = ((usb ? ComPort : Host) ?? "").Trim();
+                foreach (var w in _workspaces.Values) w.Dev.Safety.MonitoringEnabled = false;
+                string? error = await _controller.TryConnectAsync(usb, endpoint);
+                if (error != null) {
+                    _log.SetStatus(error.Split('\n')[0]);
+                    await _dialogs.AlertAsync("연결 실패", error, DialogKind.Warning);
+                    return;
+                }
+                _controller.Settings.ConnectionType = usb ? "USB" : "TCP";
+                if (usb) _controller.Settings.ComPort = endpoint; else _controller.Settings.Host = endpoint;
+                _controller.SaveSettings();
+                await _hardware.DetectAsync();
+                PrepareLaserMonitoring();
+                _dev = _controller; _pageFactory = _workspaces[1].Pages;
+                SelectedLaserId = 0; CurrentPage = _hardware;
+                _log.SetStatus("연결 완료 · " + _hardware.Lasers.Count + "대의 레이저를 확인했습니다.");
             }
             catch (Exception ex) {
-                string msg = DeviceService.Unwrap(ex).Message;
-                _log.Error("연결 실패: " + msg);
-                try { await _dev.DisconnectAsync(); }
-                catch {
-                    // 정리 실패 무시
-                }
-                IsConnecting = false;
-                string tips = usb
-                    ? "\n\n- USB 케이블 / COM 포트 번호 확인 (장치 관리자)\n- TOPAS 등 다른 프로그램이 같은 COM 포트를 쓰고 있지 않은지 확인"
-                    : "\n\n- IP 주소 / 네트워크(같은 서브넷) 확인\n- TOPAS 등 다른 프로그램이 연결 수(최대 8)를 모두 쓰고 있지 않은지 확인";
-                await _dialogs.AlertAsync("연결 실패", msg + tips, DialogKind.Danger);
+                _log.Error("연결 처리 실패: " + ex.Message);
+                try { await _controller.DisconnectAsync(); } catch { }
+                await _dialogs.AlertAsync("연결 실패", ConnectionErrors.Describe(ex, IsUsb, IsUsb ? ComPort : Host), DialogKind.Warning);
             }
-            finally {
-                IsConnecting = false;
+            finally { IsConnecting = false; IsConnected = _controller.IsConnected; }
+        }
+
+        public ObservableCollection<DiscoveredDevice> DiscoveredDevices { get; } = new();
+        [ObservableProperty] private DiscoveredDevice? _selectedDiscoveredDevice;
+        [ObservableProperty] private bool _isDiscovering;
+        [ObservableProperty] private string _discoveryStatus = "";
+        partial void OnSelectedDiscoveredDeviceChanged(DiscoveredDevice? value) {
+            if (value != null && CanEditConnection) { IsUsb = false; Host = value.Address; }
+        }
+        [RelayCommand]
+        private async Task DiscoverDevicesAsync() {
+            if (IsDiscovering || !CanEditConnection) return;
+            IsDiscovering = true; DiscoveredDevices.Clear(); DiscoveryStatus = "LAN에서 장비 검색 중…";
+            try {
+                foreach (var device in await DeviceDiscovery.FindAsync()) DiscoveredDevices.Add(device);
+                DiscoveryStatus = DiscoveredDevices.Count == 0 ? "검색된 장비가 없습니다. 같은 네트워크, 장비 전원과 UDP 60010 방화벽을 확인해 주세요." : $"{DiscoveredDevices.Count}대 검색됨 · 목록에서 선택 후 연결";
+                if (DiscoveredDevices.Count == 1) SelectedDiscoveredDevice = DiscoveredDevices[0];
             }
+            catch (Exception ex) { DiscoveryStatus = "장비 검색 실패: " + ex.Message + " (TOPAS가 검색 포트를 사용 중인지 확인)"; }
+            finally { IsDiscovering = false; }
         }
 
         /// <summary>명령줄 --connect IP로 시작 시 자동 연결.</summary>
@@ -264,6 +320,11 @@ namespace DLC_PRO.ViewModels {
             DlcDevice d = _dev.Device;
             bool con = d.IsConnected;
             IsConnected = con;
+            if (!con && SelectedLaserId > 0) {
+                foreach (var w in _workspaces.Values) w.Dev.Safety.CancelRamp();
+                SelectedLaserId = 0;
+                CurrentPage = _hardware;
+            }
             ConnectionLed = con ? LedState.On : LedState.Off;
             EndpointText = con ? ("연결: " + d.Endpoint + (d.MonitorAvailable ? " (monitor)" : " (polling)")) : "연결 안 됨";
 
@@ -280,7 +341,7 @@ namespace DLC_PRO.ViewModels {
             UserLevelText = "UL " + (con ? d.GetInt(P.UserLevel, -1).ToString() : "-");
             int nm = d.GetInt(P.MsgCountNew, 0);
             MessagesText = con && nm > 0 ? "새 시스템 메시지 " + nm + "개" : "";
-            WindowTitle = "DLC pro Control" + (con ? " — " + (d.GetString(P.LaserType) ?? "") + " @ " + d.Endpoint : "");
+            WindowTitle = "DLC pro Control · " + SelectedLaserText + (con ? " — " + (d.GetString(P.LaserType) ?? "") + " @ " + d.Endpoint : "");
         }
 
         private async void OnSafetyTripped(string reason) {
@@ -299,7 +360,7 @@ namespace DLC_PRO.ViewModels {
         [RelayCommand]
         private async Task AmpOffAsync() {
             try {
-                await _dev.Safety.AmpOffAsync();
+                await StopAllLasersAsync(false);
                 _log.Warn("AMP OFF 버튼");
             }
             catch (Exception ex) { _dev.ReportError(ex); }
@@ -308,10 +369,22 @@ namespace DLC_PRO.ViewModels {
         [RelayCommand]
         private async Task AllOffAsync() {
             try {
-                await _dev.Safety.AllOffAsync();
+                await StopAllLasersAsync(true);
                 _log.Warn("ALL OFF 버튼 (증폭기 → 마스터)");
             }
             catch (Exception ex) { _dev.ReportError(ex); }
+        }
+
+        private async Task StopAllLasersAsync(bool includeMaster) {
+            var tasks = new List<Task>();
+            foreach (var row in _hardware.Lasers) {
+                var service = _workspaces[row.Id].Dev;
+                if (includeMaster) tasks.Add(service.Safety.AllOffAsync());
+                else if (service.Safety.AmplifierKnown != false) tasks.Add(service.Safety.AmpOffAsync());
+            }
+            if (tasks.Count == 0 && _hardware.Lasers.Count == 0 && _controller.IsConnected)
+                throw new InvalidOperationException("레이저 구성을 확인하지 못했습니다. 하드웨어 상태를 확인해 주세요.");
+            await Task.WhenAll(tasks);
         }
 
         // ------------------------------------------------------------------
@@ -332,12 +405,16 @@ namespace DLC_PRO.ViewModels {
         public async Task<bool> ConfirmCloseAsync() {
             if (_closingConfirmed) return true;
             if (IsConnecting) { _log.SetStatus("연결 작업이 끝난 뒤 종료해 주세요."); return false; }
-            _dev.Safety.CancelRamp();
-            DlcDevice d = _dev.Device;
+            foreach (var workspace in _workspaces.Values) workspace.Dev.Safety.CancelRamp();
+            DlcDevice d = _controller.Device;
             bool needsConfirmation = false;
-            if (d.IsConnected && _dev.Safety.AmplifierKnown != false) {
-                try { needsConfirmation = await d.RunPriorityAsync(c => c.GetBool(P.AmpCcEnabled)); }
-                catch { needsConfirmation = true; }
+            if (d.IsConnected) {
+                foreach (var workspace in _workspaces.Values) {
+                    if (!workspace.Dev.Safety.MonitoringEnabled || workspace.Dev.Safety.AmplifierKnown == false) continue;
+                    try { needsConfirmation |= await workspace.Dev.Device.RunPriorityAsync(c => c.GetBool(P.AmpCcEnabled)); }
+                    catch { needsConfirmation = true; }
+                }
+                if (_hardware.Lasers.Count == 0) needsConfirmation = true;
             }
             if (needsConfirmation) {
                 bool? r = await _dialogs.ChooseAsync("종료",
@@ -347,7 +424,7 @@ namespace DLC_PRO.ViewModels {
                 if (r == false) {
                     bool ok = false;
                     try {
-                        Task off = _dev.Safety.AmpOffAsync();
+                        Task off = StopAllLasersAsync(false);
                         await off.WaitAsync(TimeSpan.FromSeconds(3));
                         ok = true;
                     }

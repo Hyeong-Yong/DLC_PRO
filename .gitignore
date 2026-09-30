@@ -19,3 +19,9 @@
 # OS metadata
 Thumbs.db
 .DS_Store
+
+# Generated test output (regenerate with dotnet run --project Tests/DLC_PRO.Tests.csproj)
+Tests/artifacts/
+Tests/results.txt
+Tests/ui-results.txt
+Tests/build-results.txt

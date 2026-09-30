@@ -15,14 +15,15 @@ namespace DLC_PRO.ViewModels.Pages {
     /// </summary>
     public partial class SettingsPageViewModel : PageViewModel {
         private readonly LogService _log;
+        private bool _refreshingConnectionSettings;
 
         public SettingsPageViewModel(DeviceService dev, LogService log) : base(ApplicationPageNames.Settings, dev) {
             _log = log;
             LoadSafety();
-            _logTraffic = dev.Settings.LogTraffic;
-            _scopeMaxRate = (decimal)Math.Max(1, Math.Min(30, dev.Settings.ScopeMaxRate));
-            _cmdPort = dev.Settings.CmdPort;
-            _monPort = dev.Settings.MonPort;
+            _logTraffic = dev.ConnectionSettings.LogTraffic;
+            _scopeMaxRate = (decimal)Math.Max(1, Math.Min(30, dev.ConnectionSettings.ScopeMaxRate));
+            _cmdPort = dev.ConnectionSettings.CmdPort;
+            _monPort = dev.ConnectionSettings.MonPort;
             Version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0";
         }
 
@@ -90,36 +91,50 @@ namespace DLC_PRO.ViewModels.Pages {
         [ObservableProperty] private string _monitorLineText = "-";
 
         partial void OnLogTrafficChanged(bool value) {
-            Dev.Settings.LogTraffic = value;
+            if (_refreshingConnectionSettings) return;
+            Dev.ConnectionSettings.LogTraffic = value;
             Dev.Device.LogTraffic = value;
-            Dev.SaveSettings();
+            Dev.ConnectionSettings.Save();
         }
 
         partial void OnScopeMaxRateChanged(decimal? value) {
+            if (_refreshingConnectionSettings) return;
             if (!value.HasValue) return;
             double v = Math.Max(1, Math.Min(30, (double)value.Value));
-            Dev.Settings.ScopeMaxRate = v;
+            Dev.ConnectionSettings.ScopeMaxRate = v;
             Dev.Device.MaxScopeRate = v;
-            Dev.SaveSettings();
+            Dev.ConnectionSettings.Save();
         }
 
         partial void OnCmdPortChanged(decimal? value) {
+            if (_refreshingConnectionSettings) return;
             if (value is >= 1 and <= 65535) {
-                Dev.Settings.CmdPort = (int)value.Value;
-                Dev.SaveSettings();
+                Dev.ConnectionSettings.CmdPort = (int)value.Value;
+                Dev.ConnectionSettings.Save();
             }
         }
 
         partial void OnMonPortChanged(decimal? value) {
+            if (_refreshingConnectionSettings) return;
             if (value is >= 1 and <= 65535) {
-                Dev.Settings.MonPort = (int)value.Value;
-                Dev.SaveSettings();
+                Dev.ConnectionSettings.MonPort = (int)value.Value;
+                Dev.ConnectionSettings.Save();
             }
         }
 
         protected override void OnActiveTick() {
+            // 다른 레이저 화면에서 변경한 공통 통신 설정도 반영한다.
+            var common = Dev.ConnectionSettings;
+            _refreshingConnectionSettings = true;
+            try {
+                LogTraffic = common.LogTraffic;
+                ScopeMaxRate = (decimal)common.ScopeMaxRate;
+                CmdPort = common.CmdPort;
+                MonPort = common.MonPort;
+            }
+            finally { _refreshingConnectionSettings = false; }
             DlcDevice d = Dev.Device;
-            MonitorLineText = !d.IsConnected ? "-" : d.MonitorAvailable ? "사용 중 (" + Dev.Settings.MonPort + ")" : "없음 → 폴링";
+            MonitorLineText = !d.IsConnected ? "-" : d.MonitorAvailable ? "사용 중 (" + Dev.ConnectionSettings.MonPort + ")" : "없음 → 폴링";
         }
 
         [RelayCommand]

@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DLC_PRO.ViewModels.Pages"
+             x:Class="DLC_PRO.Views.Pages.HardwarePageView"
+             x:DataType="vm:HardwarePageViewModel">
+  <ScrollViewer HorizontalScrollBarVisibility="Auto">
+    <StackPanel Margin="28" Spacing="20">
+      <StackPanel Spacing="6">
+        <TextBlock Classes="page-title" Text="{Binding Title}" />
+        <TextBlock Classes="page-subtitle" Text="{Binding Subtitle}" />
+      </StackPanel>
+      <Border Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="20">
+        <StackPanel Spacing="8">
+          <TextBlock FontSize="22" FontWeight="SemiBold" Text="{Binding ControllerText}" />
+          <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource SecondaryForeground}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+      <Border MinWidth="900" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8">
+        <StackPanel>
+          <Border Background="{DynamicResource TableHeaderBackground}" Padding="16">
+            <Grid ColumnDefinitions="45,130,*,100,85,85,85,85,100" ColumnSpacing="8">
+              <TextBlock Text="ID" />
+              <TextBlock Grid.Column="1" Text="Laser Label" />
+              <TextBlock Grid.Column="2" Text="Product Name" />
+              <TextBlock Grid.Column="3" Text="Health" />
+              <TextBlock Grid.Column="4" Text="Emission" />
+              <TextBlock Grid.Column="5" Text="Laser" />
+              <TextBlock Grid.Column="6" Text="Scan" />
+              <TextBlock Grid.Column="7" Text="Lock" />
+              <TextBlock Grid.Column="8" Text="Power Lock" />
+            </Grid>
+          </Border>
+          <ItemsControl ItemsSource="{Binding Lasers}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:LaserStatusViewModel">
+                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="16 24"
+                        Classes="subtle" Command="{Binding OpenCommand}" IsEnabled="{Binding CanOpen}"
+                        ToolTip.Tip="이 레이저의 제어 화면 열기">
+                  <Button.Template>
+                    <ControlTemplate>
+                      <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"
+                              BorderBrush="{DynamicResource CardBorder}" BorderThickness="0 0 0 1">
+                        <ContentPresenter Content="{TemplateBinding Content}" HorizontalContentAlignment="Stretch" />
+                      </Border>
+                    </ControlTemplate>
+                  </Button.Template>
+                  <Grid ColumnDefinitions="45,130,*,100,85,85,85,85,100" ColumnSpacing="8">
+                    <TextBlock Text="{Binding Id}" FontSize="22" FontWeight="Bold" />
+                    <TextBlock Grid.Column="1" Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="2" Text="{Binding Product}" TextWrapping="Wrap" />
+                    <TextBlock Grid.Column="3" Text="{Binding Health}" TextWrapping="Wrap" />
+                    <TextBlock Grid.Column="4" Text="{Binding Emission}" />
+                    <TextBlock Grid.Column="5" Text="{Binding LaserEnabled}" />
+                    <TextBlock Grid.Column="6" Text="{Binding ScanEnabled}" />
+                    <TextBlock Grid.Column="7" Text="{Binding LockEnabled}" />
+                    <TextBlock Grid.Column="8" Text="{Binding PowerLock}" />
+                  </Grid>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+      <TextBlock Text="상단 AMP OFF / ALL OFF는 감지된 모든 레이저에 적용됩니다. 개별 Laser 페이지의 OFF는 선택한 레이저에 적용됩니다."
+                 TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForeground}" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

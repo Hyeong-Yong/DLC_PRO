@@ -55,7 +55,7 @@ namespace DLC_PRO.Controls {
 
             // 더블클릭 벤치마크 표시 끄기 (더블클릭 = 자동 스케일로 사용)
             _plot.UserInputProcessor.DoubleLeftClickBenchmark(false);
-            if (_uiFont.Length == 0) _uiFont = Fonts.Detect("가나다 x=0.0 y=0.0 (수동 스케일)");
+            if (_uiFont.Length == 0) _uiFont = PlotTypography.FontName;
             ApplyDarkStyle(_plot.Plot);
 
             _coord = new ScottPlot.Plottables.Annotation { Text = "", Alignment = Alignment.LowerRight };
@@ -254,9 +254,10 @@ namespace DLC_PRO.Controls {
                 plot.Axes.Right.Label.Text = usesY2 ? (m.Y2Label ?? "") : "";
                 plot.Axes.Right.Label.ForeColor = C(PlotColors.Trace2);
                 plot.Axes.Title.Label.ForeColor = C(0xFFE8EAF6);
-                plot.Font.Automatic();
                 _lastLabels = labels;
             }
+            // Re-created series/annotations and legend also need the Korean font on every render.
+            PlotTypography.Apply(plot);
             plot.Legend.IsVisible = named > 0;
 
             // 오른쪽 축을 쓰지 않으면 이전 눈금이 남지 않도록 초기화

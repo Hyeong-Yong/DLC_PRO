@@ -110,21 +110,30 @@ namespace DLC_PRO.ViewModels.Pages {
         [RelayCommand]
         private async Task StartAsync() {
             DlcDevice d = Dev.Device;
-            if (d.GetInt(P.LockState, 0) >= (int)LockStateCode.Locking) {
-                await _dialogs.AlertAsync("Wide Scan", "락이 걸려 있습니다. 먼저 UNLOCK 하세요.", DialogKind.Warning);
-                return;
+            long session = d.SessionVersion;
+            try {
+                // 캐시가 오래되었거나 확인창이 열린 동안 상태가 바뀔 수 있으므로 장비에서 확인한다.
+                bool disableScan = await d.RunForSessionAsync(session, c => {
+                    if (c.GetInt(P.LockState) >= (int)LockStateCode.Locking)
+                        throw new InvalidOperationException("락이 걸려 있습니다. 먼저 UNLOCK 하세요.");
+                    return c.GetBool(P.ScanEnabled);
+                });
+                if (disableScan && !await _dialogs.ConfirmAsync("Wide Scan", "Wide Scan은 일반 스캔(Scan Generator)이 꺼져 있어야 시작됩니다.\n스캔을 끄고 시작할까요?")) return;
+                await d.RunForSessionAsync(session, c => {
+                    if (c.GetInt(P.LockState) >= (int)LockStateCode.Locking)
+                        throw new InvalidOperationException("락이 걸려 있습니다. 먼저 UNLOCK 하세요.");
+                    if (c.GetBool(P.ScanEnabled)) {
+                        if (!disableScan) throw new InvalidOperationException("일반 스캔 상태가 변경되었습니다. 상태를 확인한 후 다시 시작해 주세요.");
+                        d.SetAndReadBack(c, P.ScanEnabled, false);
+                        if (c.GetBool(P.ScanEnabled)) throw new InvalidOperationException("일반 스캔 OFF를 확인하지 못했습니다.");
+                    }
+                    return c.Exec(P.CmdWsStart);
+                });
             }
-            // 매뉴얼: wide-scan:start 는 laser1:scan:enabled 가 #f 일 때만 동작
-            if (d.GetBool(P.ScanEnabled, false)) {
-                if (!await _dialogs.ConfirmAsync("Wide Scan", "Wide Scan은 일반 스캔(Scan Generator)이 꺼져 있어야 시작됩니다.\n스캔을 끄고 시작할까요?"))
-                    return;
-                if (d.GetInt(P.LockState, 0) >= (int)LockStateCode.Locking) {
-                    await _dialogs.AlertAsync("Wide Scan", "락이 걸려 있습니다. 먼저 UNLOCK 하세요.", DialogKind.Warning);
-                    return;
-                }
-                if (!await Dev.SetAsync(P.ScanEnabled, false)) return;
+            catch (Exception ex) {
+                Dev.ReportError("Wide Scan 시작 실패: " + DeviceService.Unwrap(ex).Message);
+                await _dialogs.AlertAsync("Wide Scan", DeviceService.Unwrap(ex).Message, DialogKind.Warning);
             }
-            await Dev.ExecAsync(P.CmdWsStart);
         }
 
         [RelayCommand]

@@ -24,6 +24,7 @@ namespace DLC_PRO.Core
         public float[] BackgroundX;
         public float[] BackgroundY;
         public DateTime Time;
+        public int LaserId = 1;
     }
 
     /// <summary>
@@ -69,21 +70,42 @@ namespace DLC_PRO.Core
         private readonly object _watchLock = new object();
         private readonly object _connLock = new object();
         private volatile Session _s;
+        private readonly DlcDevice _parent;
+        public int LaserId { get; } = 1;
+        private readonly ConcurrentDictionary<int, DlcDevice> _views = new();
+        public DlcDevice() { }
+        private DlcDevice(DlcDevice parent, int id) { _parent = parent; LaserId = id; }
+        public DlcDevice ForLaser(int id) => _parent != null ? _parent.ForLaser(id) : id == 1 ? this : _views.GetOrAdd(id, i => {
+            LaserAddress.Map("laser1:type", i);
+            return new DlcDevice(this, i);
+        });
+        private string Map(string name) => LaserAddress.Map(name, LaserId);
         private long _sessionVersion;
-        public long SessionVersion => Interlocked.Read(ref _sessionVersion);
+        public long SessionVersion => _parent?.SessionVersion ?? Interlocked.Read(ref _sessionVersion);
         private readonly Stopwatch _errThrottle = Stopwatch.StartNew();
 
-        public ConnectionKind Kind { get { Session s = _s; return s != null ? s.Kind : ConnectionKind.Tcp; } }
-        public bool IsConnected { get { Session s = _s; return s != null && s.Running; } }
-        public bool MonitorAvailable { get { Session s = _s; return s != null && s.Mon != null; } }
-        public string Endpoint { get; private set; }
+        public ConnectionKind Kind { get { if (_parent != null) return _parent.Kind; Session s = _s; return s != null ? s.Kind : ConnectionKind.Tcp; } }
+        public bool IsConnected { get { if (_parent != null) return _parent.IsConnected; Session s = _s; return s != null && s.Running; } }
+        public bool MonitorAvailable { get { if (_parent != null) return _parent.MonitorAvailable; Session s = _s; return s != null && s.Mon != null; } }
+        private string _endpoint;
+        public string Endpoint { get => _parent?.Endpoint ?? _endpoint; private set => _endpoint = value; }
 
         /// <summary>스코프 데이터 스트리밍 ON/OFF (Scan&amp;Lock 탭이 보일 때 ON).</summary>
-        public volatile bool ScopeStreaming;
+        private volatile bool _scopeStreaming;
+        private volatile int _scopeLaserId = 1;
+        public bool ScopeStreaming {
+            get => _parent != null ? _parent._scopeStreaming && _parent._scopeLaserId == LaserId : _scopeStreaming && _scopeLaserId == 1;
+            set {
+                var root = _parent ?? this;
+                if (value) { root._scopeLaserId = LaserId; root._scopeStreaming = true; }
+                else if (root._scopeLaserId == LaserId) root._scopeStreaming = false;
+            }
+        }
         /// <summary>스코프와 함께 락 후보 데이터도 읽을지 여부.</summary>
         public volatile bool FetchCandidates = true;
         /// <summary>최대 스코프 갱신률 (Hz, 0.5~30).</summary>
-        public double MaxScopeRate = 15;
+        private double _maxScopeRate = 15;
+        public double MaxScopeRate { get => _parent?.MaxScopeRate ?? _maxScopeRate; set { if (_parent != null) _parent.MaxScopeRate = value; else _maxScopeRate = value; } }
 
         public event Action<bool> ConnectionChanged;
         /// <summary>(레벨 "INFO"/"WARN"/"ERROR", 메시지)</summary>
@@ -94,7 +116,8 @@ namespace DLC_PRO.Core
         /// <summary>(이름, 원시 값) — 캐시 값이 갱신될 때 (백그라운드 스레드)</summary>
         public event Action<string, string> ParamChanged;
 
-        public bool LogTraffic { get; set; }
+        private bool _logTraffic;
+        public bool LogTraffic { get => _parent?.LogTraffic ?? _logTraffic; set { if (_parent != null) _parent.LogTraffic = value; else _logTraffic = value; } }
 
         // ==================================================================
         // 연결
@@ -102,6 +125,7 @@ namespace DLC_PRO.Core
 
         public void ConnectTcp(string host, int cmdPort = 1998, int monPort = 1999)
         {
+            if (_parent != null) throw new InvalidOperationException("컨트롤러에서 연결해 주세요.");
             lock (_connLock)
             {
                 DisconnectCore();
@@ -134,6 +158,7 @@ namespace DLC_PRO.Core
 
         public void ConnectSerial(string portName)
         {
+            if (_parent != null) throw new InvalidOperationException("컨트롤러에서 연결해 주세요.");
             lock (_connLock)
             {
                 DisconnectCore();
@@ -209,6 +234,7 @@ namespace DLC_PRO.Core
 
         public void Disconnect()
         {
+            if (_parent != null) return;
             lock (_connLock) DisconnectCore();
         }
 
@@ -259,6 +285,7 @@ namespace DLC_PRO.Core
         /// <summary>파라미터를 구독 목록에 등록 (모니터링 라인 또는 폴링으로 캐시 갱신).</summary>
         public void Watch(string name, int periodMs = 250, double threshold = 0)
         {
+            if (_parent != null) { _parent.Watch(Map(name), periodMs, threshold); return; }
             WatchSpec w;
             lock (_watchLock)
             {
@@ -292,6 +319,7 @@ namespace DLC_PRO.Core
 
         private void UpdateCache(string name, string raw)
         {
+            if (_parent != null) { _parent.UpdateCache(Map(name), raw); return; }
             string old;
             bool changed = !_cache.TryGetValue(name, out old) || old != raw;
             _cache[name] = raw;
@@ -304,24 +332,24 @@ namespace DLC_PRO.Core
             }
         }
 
-        public bool TryGetRaw(string name, out string raw) { return _cache.TryGetValue(name, out raw); }
+        public bool TryGetRaw(string name, out string raw) { return _parent != null ? _parent.TryGetRaw(Map(name), out raw) : _cache.TryGetValue(name, out raw); }
 
         public bool TryGetDouble(string name, out double v)
         {
             string raw; v = double.NaN;
-            return _cache.TryGetValue(name, out raw) && DecofValue.TryDouble(raw, out v);
+            return TryGetRaw(name, out raw) && DecofValue.TryDouble(raw, out v);
         }
 
         public bool TryGetBool(string name, out bool v)
         {
             string raw; v = false;
-            return _cache.TryGetValue(name, out raw) && DecofValue.TryBool(raw, out v);
+            return TryGetRaw(name, out raw) && DecofValue.TryBool(raw, out v);
         }
 
         public bool TryGetInt(string name, out int v)
         {
             string raw; v = 0;
-            return _cache.TryGetValue(name, out raw) && DecofValue.TryInt(raw, out v);
+            return TryGetRaw(name, out raw) && DecofValue.TryInt(raw, out v);
         }
 
         public double GetDouble(string name, double fallback)
@@ -341,10 +369,10 @@ namespace DLC_PRO.Core
 
         public string GetString(string name)
         {
-            string raw; return _cache.TryGetValue(name, out raw) ? DecofValue.Str(raw) : null;
+            string raw; return TryGetRaw(name, out raw) ? DecofValue.Str(raw) : null;
         }
 
-        public bool IsUnavailable(string name) { return _unavailable.ContainsKey(name); }
+        public bool IsUnavailable(string name) { return _parent != null ? _parent.IsUnavailable(Map(name)) : _unavailable.ContainsKey(name); }
 
         // ==================================================================
         // 비동기 명령 (작업 큐 → 워커 스레드)
@@ -367,6 +395,7 @@ namespace DLC_PRO.Core
 
         private Task<T> Enqueue<T>(Func<DecofClient, T> func, bool priority)
         {
+            if (_parent != null) return _parent.Enqueue(c => func(c.ForLaser(LaserId)), priority);
             TaskCompletionSource<T> tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
             Session s = _s;
             if (s == null || !s.Running)
@@ -395,7 +424,7 @@ namespace DLC_PRO.Core
             int code = c.ParamSet(name, value);
             if (code == 2) Log("WARN", name + ": 값이 허용 범위로 제한됨(clip)");
             try { UpdateCache(name, c.ParamRef(name)); }
-            catch { _cache.TryRemove(name, out _); throw; }
+            catch { (_parent ?? this)._cache.TryRemove(Map(name), out _); throw; }
             return code;
         }
 
@@ -546,12 +575,16 @@ namespace DLC_PRO.Core
         private void ScopeLoop(Session s)
         {
             bool bgFetched = false;
+            int bgLaserId = 0;
             float[] bgX = null, bgY = null;
             while (s.Running)
             {
-                if (!ScopeStreaming) { Thread.Sleep(100); continue; }
+                if (!_scopeStreaming) { Thread.Sleep(100); continue; }
+                int laserId = _scopeLaserId;
+                var view = ForLaser(laserId);
+                if (bgLaserId != laserId) { bgFetched = false; bgX = bgY = null; bgLaserId = laserId; }
                 Stopwatch sw = Stopwatch.StartNew();
-                double rate = GetDouble(P.ScopeUpdateRate, 10);
+                double rate = view.GetDouble(P.ScopeUpdateRate, 10);
                 double max = MaxScopeRate;
                 if (double.IsNaN(max) || max < 0.5) max = 0.5;
                 if (max > 30) max = 30;
@@ -565,11 +598,12 @@ namespace DLC_PRO.Core
                     // 주 명령 라인을 같이 쓸 때는 다른 명령이 밀리지 않도록 갱신률을 제한
                     if (usingMain) rate = Math.Min(rate, s.Kind == ConnectionKind.Serial ? 3 : 5);
 
-                    ScopeFrame f = new ScopeFrame { Time = DateTime.Now };
+                    c = c.ForLaser(laserId);
+                    ScopeFrame f = new ScopeFrame { Time = DateTime.Now, LaserId = laserId };
                     BinaryBlob blob = BinaryBlob.Parse(c.GetBinary(P.ScopeData));
                     f.X = blob.Floats('x'); f.Y1 = blob.Floats('y'); f.Y2 = blob.Floats('Y');
 
-                    if (FetchCandidates && !IsUnavailable(P.LockCandidates))
+                    if (view.FetchCandidates && !view.IsUnavailable(P.LockCandidates))
                     {
                         try
                         {
@@ -581,14 +615,14 @@ namespace DLC_PRO.Core
                             if (t != null && t.Length > 0) f.Tracking = t[0];
                             f.LockStateFromBlob = cb.StateByte('s');
                         }
-                        catch (DecofException ex) { _unavailable[P.LockCandidates] = ex.Message; }
+                        catch (DecofException ex) { _unavailable[LaserAddress.Map(P.LockCandidates, laserId)] = ex.Message; }
                     }
 
                     // 락이 걸린 동안에는 락 직전 트레이스(background-trace)를 한 번 읽어 함께 표시
-                    int st = f.LockStateFromBlob ?? GetInt(P.LockState, 0);
+                    int st = f.LockStateFromBlob ?? view.GetInt(P.LockState, 0);
                     if (st >= (int)LockStateCode.Locking)
                     {
-                        if (!bgFetched && !IsUnavailable(P.LockBackgroundTrace))
+                        if (!bgFetched && !view.IsUnavailable(P.LockBackgroundTrace))
                         {
                             try
                             {
@@ -602,8 +636,8 @@ namespace DLC_PRO.Core
                     else { bgFetched = false; bgX = bgY = null; }
                     f.BackgroundX = bgX; f.BackgroundY = bgY;
 
-                    Action<ScopeFrame> h = ScopeFrameReceived;
-                    if (h != null && s.Running) { try { h(f); } catch { } }
+                    Action<ScopeFrame> h = view.ScopeFrameReceived;
+                    if (h != null && s.Running && laserId == _scopeLaserId) { try { h(f); } catch { } }
                 }
                 catch (Exception ex)
                 {
@@ -621,6 +655,7 @@ namespace DLC_PRO.Core
 
         public void Log(string level, string msg)
         {
+            if (_parent != null) { _parent.Log(level, "[Laser " + LaserId + "] " + msg); return; }
             Action<string, string> h = LogMessage;
             if (h != null) { try { h(level, msg); } catch { } }
         }
@@ -637,12 +672,14 @@ namespace DLC_PRO.Core
 
         private void RaiseTraffic(string d, string t)
         {
+            foreach (var view in _views.Values) view.RaiseTraffic(d, t);
             Action<string, string> h = Traffic;
             if (h != null) { try { h(d, t); } catch { } }
         }
 
         private void RaiseConnection(bool c)
         {
+            foreach (var view in _views.Values) view.RaiseConnection(c);
             Action<bool> h = ConnectionChanged;
             if (h != null) { try { h(c); } catch { } }
         }

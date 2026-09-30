@@ -11,6 +11,7 @@ namespace DLC_PRO.Models {
     /// 처음 실행 시 기존 WinForms 버전(DlcProControl)의 설정 파일이 있으면 그것을 읽어온다.
     /// </summary>
     public sealed class AppSettings {
+        public int LaserId { get; private set; } = 1;
         public string Host = "192.168.0.100";
         public int CmdPort = 1998;
         public int MonPort = 1999;
@@ -22,21 +23,23 @@ namespace DLC_PRO.Models {
         public AmpSafetySettings Safety = new AmpSafetySettings();
         public FrequencyAxisSettings Freq = new FrequencyAxisSettings();
 
-        public static string Folder =>
+        internal static string? FolderOverride;
+        public static string Folder => FolderOverride ??
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DLC_PRO");
 
         public static string LogFolder => Path.Combine(Folder, "logs");
 
-        private static string FilePath => Path.Combine(Folder, "settings.ini");
+        private static string PathFor(int id) => Path.Combine(Folder, id == 1 ? "settings.ini" : "settings-laser" + id + ".ini");
+        private string FilePath => PathFor(LaserId);
 
         /// <summary>이전 WinForms 버전 설정 파일 (마이그레이션용).</summary>
         private static string LegacyFilePath =>
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DlcProControl", "settings.ini");
 
-        public static AppSettings Load() {
-            AppSettings s = new AppSettings();
+        public static AppSettings Load(int laserId = 1) {
+            AppSettings s = new AppSettings { LaserId = laserId };
             try {
-                string path = File.Exists(FilePath) ? FilePath : LegacyFilePath;
+                string path = File.Exists(s.FilePath) || laserId != 1 ? s.FilePath : LegacyFilePath;
                 if (!File.Exists(path)) return s;
                 Dictionary<string, string> kv = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 foreach (string line in File.ReadAllLines(path, Encoding.UTF8)) {

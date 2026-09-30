@@ -22,12 +22,14 @@ namespace DLC_PRO.ViewModels.Pages {
         private readonly StringBuilder _out = new StringBuilder();
 
         public ConsolePageViewModel(DeviceService dev) : base(ApplicationPageNames.Console, dev) {
+            for (int i = 0; i < QuickCommands.Count; i++)
+                ((string[])QuickCommands)[i] = QuickCommands[i].Replace("laser1:", "laser" + dev.Device.LaserId + ":", StringComparison.Ordinal);
             Append("DLC pro 명령 콘솔 — Enter로 전송, ↑/↓ 이력. 예) (param-ref 'laser1:dl:cc:current-act)\n");
             dev.Device.Traffic += (d, t) => _traffic.Enqueue("[" + DateTime.Now.ToString("HH:mm:ss.fff") + "] " + d + ": " + t.Replace("\r", "").Replace("\n", " ⏎ "));
         }
 
         public override string Title => "Console";
-        public override string Subtitle => "DeCoF(Scheme) 명령 직접 입력 — 고급 사용자용";
+        public override string Subtitle => "Laser " + Dev.Device.LaserId + " · 원시 명령의 laser1:/laser2:는 입력한 그대로 전송됩니다.";
 
         public IReadOnlyList<string> QuickCommands { get; } = new[] {
             "(param-disp 'laser1:dl)", "(param-disp 'laser1:amp)", "(param-disp 'laser1:dl:lock)",

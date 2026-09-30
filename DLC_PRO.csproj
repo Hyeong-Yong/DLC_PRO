@@ -9,6 +9,9 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
+    <Compile Remove="Tests\**\*.cs" />
+    <AvaloniaResource Remove="Tests\**" />
+    <InternalsVisibleTo Include="DLC_PRO.Tests" />
   </ItemGroup>
 
   <ItemGroup>

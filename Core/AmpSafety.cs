@@ -27,12 +27,13 @@ namespace DLC_PRO.Core
         /// <summary>파일/입력값 보정 (NaN, 음수, 0 스텝 방지).</summary>
         public void Sanitize()
         {
-            if (double.IsNaN(MinSeedPowerMw) || double.IsInfinity(MinSeedPowerMw) || MinSeedPowerMw < 0) MinSeedPowerMw = 0;
-            if (double.IsNaN(MaxAmpCurrentMa) || double.IsInfinity(MaxAmpCurrentMa) || MaxAmpCurrentMa < 0) MaxAmpCurrentMa = 0;
-            if (double.IsNaN(RampStepMa) || double.IsInfinity(RampStepMa) || RampStepMa < 1) RampStepMa = 100;
+            // UI 입력은 decimal이다. 손상된 설정 파일의 유한한 초대형 값도 시작 시 overflow를 유발한다.
+            if (double.IsNaN(MinSeedPowerMw) || MinSeedPowerMw >= (double)decimal.MaxValue || MinSeedPowerMw < 0) MinSeedPowerMw = 0;
+            if (double.IsNaN(MaxAmpCurrentMa) || MaxAmpCurrentMa >= (double)decimal.MaxValue || MaxAmpCurrentMa < 0) MaxAmpCurrentMa = 0;
+            if (double.IsNaN(RampStepMa) || RampStepMa >= (double)decimal.MaxValue || RampStepMa < 1) RampStepMa = 100;
             if (RampIntervalMs < 20) RampIntervalMs = 20;
             if (RampIntervalMs > 10000) RampIntervalMs = 10000;
-            if (double.IsNaN(ConfirmDeltaMa) || double.IsInfinity(ConfirmDeltaMa) || ConfirmDeltaMa < 0) ConfirmDeltaMa = 300;
+            if (double.IsNaN(ConfirmDeltaMa) || ConfirmDeltaMa >= (double)decimal.MaxValue || ConfirmDeltaMa < 0) ConfirmDeltaMa = 300;
             if (WatchdogDelayMs < 50) WatchdogDelayMs = 50;
             if (WatchdogDelayMs > 10000) WatchdogDelayMs = 10000;
         }
@@ -62,6 +63,7 @@ namespace DLC_PRO.Core
         private volatile bool _disposed;
         private long _watchSession = -1;
         public long OperationVersion => Interlocked.Read(ref _operationVersion);
+        public volatile bool MonitoringEnabled = true;
 
         public AmpSafetySettings Settings { get; private set; }
 
@@ -302,7 +304,9 @@ namespace DLC_PRO.Core
                 try { _dev.SetAndReadBack(c, P.AmpCcEnabled, false); }
                 catch (DecofException ex)
                 {
-                    if (ex.Code == -3 && AmplifierKnown == false) ampExists = false;
+                    // 모니터링 응답과 직접 읽기의 도착 순서는 다를 수 있다. OFF 예외 처리는 실시간 타입으로 판단한다.
+                    string type = ex.Code == -3 ? c.GetString(P.LaserType) : null;
+                    if (!string.IsNullOrWhiteSpace(type) && type.IndexOf("TA", StringComparison.OrdinalIgnoreCase) < 0 && type.IndexOf("MOPA", StringComparison.OrdinalIgnoreCase) < 0) ampExists = false;
                     else throw new InvalidOperationException("증폭기 OFF 실패 — 마스터는 끄지 않았습니다: " + ex.Message, ex);
                 }
                 if (ampExists && c.GetBool(P.AmpCcEnabled))
@@ -317,7 +321,7 @@ namespace DLC_PRO.Core
             try
             {
                 if (_watchSession != session) { _watchSession = session; _faultSince = null; _episodeReported = false; }
-                if (_disposed || !_dev.IsConnected || !Settings.WatchdogEnabled || AmplifierKnown == false)
+                if (_disposed || !MonitoringEnabled || !_dev.IsConnected || !Settings.WatchdogEnabled || AmplifierKnown == false)
                 { _faultSince = null; return; }
                 string reason = null;
                 try

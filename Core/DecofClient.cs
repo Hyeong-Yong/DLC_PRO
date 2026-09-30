@@ -17,20 +17,29 @@ namespace DLC_PRO.Core
     public sealed class DecofClient : IDisposable
     {
         private readonly ITransport _t;
-        private readonly object _sync = new object();
-        private readonly MemoryStream _rx = new MemoryStream();
-        private readonly byte[] _buf = new byte[65536];
+        private readonly object _sync;
+        private readonly MemoryStream _rx;
+        private readonly byte[] _buf;
         private bool _broken;
+        private readonly DecofClient _owner;
+        private readonly int _laserId = 1;
+        private DecofClient(DecofClient owner, int laserId) { _owner = owner; _laserId = laserId; }
+        internal DecofClient ForLaser(int id) => id == 1 ? this : new DecofClient(this, id);
+        private string Map(string name) => LaserAddress.Map(name, _laserId);
 
         /// <summary>송수신 로그 (방향 "TX"/"RX", 내용). 호출 스레드에서 발생.</summary>
         public event Action<string, string> Traffic;
 
-        public string Description { get { return _t.Description; } }
-        public bool IsBroken { get { return _broken; } }
+        public string Description { get { return _owner?.Description ?? _t.Description; } }
+        public bool IsBroken { get { return _owner?.IsBroken ?? _broken; } }
         public string WelcomeText { get; private set; }
 
         public DecofClient(ITransport transport, bool isSerial = false)
         {
+            // 레이저별 뷰는 소유 연결의 버퍼와 잠금을 사용한다.
+            _sync = new object();
+            _rx = new MemoryStream();
+            _buf = new byte[65536];
             _t = transport;
             try
             {
@@ -59,6 +68,7 @@ namespace DLC_PRO.Core
         /// <summary>한 줄 명령을 보내고 프롬프트 직전까지의 응답 전체를 반환.</summary>
         public string Send(string command, int timeoutMs = 3000)
         {
+            if (_owner != null) return _owner.Send(command, timeoutMs);
             lock (_sync)
             {
                 if (_broken) throw new IOException("연결이 끊어졌습니다.");
@@ -136,6 +146,7 @@ namespace DLC_PRO.Core
         /// <summary>(param-ref 'name) → 원시 값 문자열 (마지막 줄).</summary>
         public string ParamRef(string name, int timeoutMs = 3000)
         {
+            name = Map(name);
             string resp = Send("(param-ref '" + name + ")", timeoutMs);
             string last = LastLine(resp);
             if (DecofValue.IsError(last) || DecofValue.IsError(FirstLine(resp)))
@@ -146,6 +157,7 @@ namespace DLC_PRO.Core
         /// <summary>(param-set! 'name value) → 상태 코드 (0 성공, 양수 경고: 2 = clip).</summary>
         public int ParamSet(string name, object value, int timeoutMs = 3000)
         {
+            name = Map(name);
             string enc = DecofValue.Encode(value);
             string resp = Send("(param-set! '" + name + " " + enc + ")", timeoutMs);
             string last = LastLine(resp);
@@ -160,6 +172,7 @@ namespace DLC_PRO.Core
         /// <summary>(exec 'name args...) → 응답 전체 (출력 텍스트 + 마지막 줄 반환값).</summary>
         public string Exec(string name, object[] args, int timeoutMs = 10000)
         {
+            name = Map(name);
             StringBuilder sb = new StringBuilder("(exec '").Append(name);
             if (args != null)
                 foreach (object a in args) sb.Append(' ').Append(DecofValue.Encode(a));
@@ -209,6 +222,7 @@ namespace DLC_PRO.Core
 
         public void Dispose()
         {
+            if (_owner != null) return;
             Quit();
             _t.Dispose();
         }

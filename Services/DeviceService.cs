@@ -18,10 +18,14 @@ namespace DLC_PRO.Services {
         private readonly DispatcherTimer _timer;
         private readonly ConcurrentQueue<Action> _uiQueue = new ConcurrentQueue<Action>();
         private bool _disposed;
+        private readonly DeviceService? _owner;
+        private readonly System.Collections.Generic.List<DeviceService> _children = new();
 
         public DlcDevice Device { get; }
         public AmpSafety Safety { get; }
         public AppSettings Settings { get; }
+        /// <summary>레이저별 안전/축 설정과 달리 통신 설정은 컨트롤러 전체에서 공유한다.</summary>
+        public AppSettings ConnectionSettings => _owner?.ConnectionSettings ?? Settings;
 
         /// <summary>100 ms마다 (UI 스레드).</summary>
         public event Action? Tick;
@@ -35,13 +39,16 @@ namespace DLC_PRO.Services {
         /// <summary>소프트웨어 안전 인터록이 증폭기를 차단함 (UI 스레드, 사유).</summary>
         public event Action<string>? SafetyTripped;
 
-        public DeviceService(LogService log) {
+        public DeviceService(LogService log) : this(log, null, 1) { }
+
+        private DeviceService(LogService log, DeviceService? owner, int laserId) {
             _log = log;
-            Settings = AppSettings.Load();
-            Device = new DlcDevice { LogTraffic = Settings.LogTraffic, MaxScopeRate = Settings.ScopeMaxRate };
+            _owner = owner;
+            Settings = AppSettings.Load(laserId);
+            Device = owner == null ? new DlcDevice { LogTraffic = Settings.LogTraffic, MaxScopeRate = Settings.ScopeMaxRate } : owner.Device.ForLaser(laserId);
             Safety = new AmpSafety(Device, Settings.Safety);
 
-            Device.LogMessage += (level, msg) => _log.Add(level, msg);
+            if (owner == null) Device.LogMessage += (level, msg) => _log.Add(level, msg);
             Device.ConnectionChanged += c => _uiQueue.Enqueue(() => ConnectionChanged?.Invoke(c));
             Safety.Tripped += reason => _uiQueue.Enqueue(() => {
                 _log.Error("[안전 차단] " + reason);
@@ -57,6 +64,31 @@ namespace DLC_PRO.Services {
         }
 
         public bool IsConnected => Device.IsConnected;
+        public DeviceService CreateLaserService(int laserId) {
+            if (laserId == 1) return this;
+            var child = new DeviceService(_log, this, laserId);
+            _children.Add(child);
+            return child;
+        }
+
+        // Expected connection failures are returned as UI messages, never as an unobserved Task exception.
+        public Task<string?> TryConnectAsync(bool usb, string endpoint) => Task.Run<string?>(() => {
+            try {
+                if (string.IsNullOrWhiteSpace(endpoint)) return usb ? "USB COM 포트를 선택해 주세요." : "IP 주소를 입력해 주세요.";
+                if (usb) {
+                    if (!Array.Exists(System.IO.Ports.SerialPort.GetPortNames(), p => p.Equals(endpoint, StringComparison.OrdinalIgnoreCase)))
+                        return "USB 포트를 찾을 수 없습니다: " + endpoint + "\nUSB 연결과 COM 포트 번호를 확인해 주세요.";
+                    Device.ConnectSerial(endpoint);
+                }
+                else Device.ConnectTcp(endpoint, Settings.CmdPort, Settings.MonPort);
+                return null;
+            }
+            catch (Exception ex) {
+                _log.Error("연결 실패: " + Unwrap(ex).Message);
+                try { Device.Disconnect(); } catch { }
+                return ConnectionErrors.Describe(ex, usb, endpoint);
+            }
+        });
 
         private void OnTick() {
             int n = 0;
@@ -142,9 +174,10 @@ namespace DLC_PRO.Services {
             if (_disposed) return;
             _disposed = true;
             _timer.Stop();
+            foreach (var child in _children) child.Dispose();
             try { Safety.Dispose(); }
             catch { }
-            try { Device.Disconnect(); }
+            try { if (_owner == null) Device.Disconnect(); }
             catch { }
             Settings.Save();
         }

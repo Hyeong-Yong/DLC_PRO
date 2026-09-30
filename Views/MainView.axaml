@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:DLC_PRO.ViewModels"
              xmlns:m="using:DLC_PRO.Models"
+             xmlns:core="using:DLC_PRO.Core"
              xmlns:conv="using:DLC_PRO.Converters"
              mc:Ignorable="d" d:DesignWidth="1400" d:DesignHeight="860"
              x:Class="DLC_PRO.Views.MainView"
@@ -34,28 +35,30 @@
                 <!-- 페이지 메뉴 -->
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Spacing="10">
-                        <IconButton Classes="subtle" IconText="&#xe2de;" HorizontalAlignment="Stretch" Classes.active="{Binding LaserPageIsActive}" Command="{Binding GoToLaserCommand}" ToolTip.Tip="Laser">
+                        <Button Classes="subtle" HorizontalAlignment="Stretch" Command="{Binding GoToHardwareCommand}" Content="하드웨어 상태" />
+                        <TextBlock Text="{Binding SelectedLaserText}" FontWeight="Bold" Margin="4 6" IsVisible="{Binding SideMenuExpanded}" />
+                        <IconButton Classes="subtle" IconText="&#xe2de;" HorizontalAlignment="Stretch" Classes.active="{Binding LaserPageIsActive}" Command="{Binding GoToLaserCommand}" IsEnabled="{Binding CanUseLaserControls}" ToolTip.Tip="Laser">
                             <Label Content="Laser" IsVisible="{Binding SideMenuExpanded}" />
                         </IconButton>
-                        <IconButton Classes="subtle" IconText="&#xe2fa;" HorizontalAlignment="Stretch" Classes.active="{Binding ScanLockPageIsActive}" Command="{Binding GoToScanLockCommand}" ToolTip.Tip="Scan &amp; Lock">
+                        <IconButton Classes="subtle" IconText="&#xe2fa;" HorizontalAlignment="Stretch" Classes.active="{Binding ScanLockPageIsActive}" Command="{Binding GoToScanLockCommand}" IsEnabled="{Binding CanUseLaserControls}" ToolTip.Tip="Scan &amp; Lock">
                             <Label Content="Scan &amp; Lock" IsVisible="{Binding SideMenuExpanded}" />
                         </IconButton>
-                        <IconButton Classes="subtle" IconText="&#xe094;" HorizontalAlignment="Stretch" Classes.active="{Binding RelockPageIsActive}" Command="{Binding GoToRelockCommand}" ToolTip.Tip="ReLock">
+                        <IconButton Classes="subtle" IconText="&#xe094;" HorizontalAlignment="Stretch" Classes.active="{Binding RelockPageIsActive}" Command="{Binding GoToRelockCommand}" IsEnabled="{Binding CanUseLaserControls}" ToolTip.Tip="ReLock">
                             <Label Content="ReLock" IsVisible="{Binding SideMenuExpanded}" />
                         </IconButton>
-                        <IconButton Classes="subtle" IconText="&#xe628;" HorizontalAlignment="Stretch" Classes.active="{Binding StabilizationPageIsActive}" Command="{Binding GoToStabilizationCommand}" ToolTip.Tip="Stabilization">
+                        <IconButton Classes="subtle" IconText="&#xe628;" HorizontalAlignment="Stretch" Classes.active="{Binding StabilizationPageIsActive}" Command="{Binding GoToStabilizationCommand}" IsEnabled="{Binding CanUseLaserControls}" ToolTip.Tip="Stabilization">
                             <Label Content="Stabilization" IsVisible="{Binding SideMenuExpanded}" />
                         </IconButton>
-                        <IconButton Classes="subtle" IconText="&#xea9a;" HorizontalAlignment="Stretch" Classes.active="{Binding WideScanPageIsActive}" Command="{Binding GoToWideScanCommand}" ToolTip.Tip="Wide Scan">
+                        <IconButton Classes="subtle" IconText="&#xea9a;" HorizontalAlignment="Stretch" Classes.active="{Binding WideScanPageIsActive}" Command="{Binding GoToWideScanCommand}" IsEnabled="{Binding CanUseLaserControls}" ToolTip.Tip="Wide Scan">
                             <Label Content="Wide Scan" IsVisible="{Binding SideMenuExpanded}" />
                         </IconButton>
-                        <IconButton Classes="subtle" IconText="&#xe3ee;" HorizontalAlignment="Stretch" Classes.active="{Binding RecorderPageIsActive}" Command="{Binding GoToRecorderCommand}" ToolTip.Tip="Recorder">
+                        <IconButton Classes="subtle" IconText="&#xe3ee;" HorizontalAlignment="Stretch" Classes.active="{Binding RecorderPageIsActive}" Command="{Binding GoToRecorderCommand}" IsEnabled="{Binding CanUseLaserControls}" ToolTip.Tip="Recorder">
                             <Label Content="Recorder" IsVisible="{Binding SideMenuExpanded}" />
                         </IconButton>
                         <IconButton Classes="subtle" IconText="&#xe610;" HorizontalAlignment="Stretch" Classes.active="{Binding SystemPageIsActive}" Command="{Binding GoToSystemCommand}" ToolTip.Tip="System">
                             <Label Content="System" IsVisible="{Binding SideMenuExpanded}" />
                         </IconButton>
-                        <IconButton Classes="subtle" IconText="&#xeae8;" HorizontalAlignment="Stretch" Classes.active="{Binding ConsolePageIsActive}" Command="{Binding GoToConsoleCommand}" ToolTip.Tip="Console">
+                        <IconButton Classes="subtle" IconText="&#xeae8;" HorizontalAlignment="Stretch" Classes.active="{Binding ConsolePageIsActive}" Command="{Binding GoToConsoleCommand}" IsEnabled="{Binding CanUseLaserControls}" ToolTip.Tip="Console">
                             <Label Content="Console" IsVisible="{Binding SideMenuExpanded}" />
                         </IconButton>
                     </StackPanel>
@@ -77,7 +80,7 @@
         </Border>
 
         <!-- ============================ 오른쪽 영역 ============================ -->
-        <Grid Grid.Column="1" RowDefinitions="Auto, *, Auto">
+        <Grid Grid.Column="1" RowDefinitions="Auto, Auto, *, Auto">
 
             <!-- 상단 연결/상태 바 (비상 버튼은 대화상자가 떠 있어도 누를 수 있도록 오버레이 밖) -->
             <Border Grid.Row="0"
@@ -148,22 +151,33 @@
                                     IconText="&#xe3da;"
                                     Content="AMP OFF"
                                     Command="{Binding AmpOffCommand}"
-                                    ToolTip.Tip="증폭기(TA) 전류 즉시 OFF" />
+                                    ToolTip.Tip="모든 레이저의 증폭기(TA) 전류 OFF" />
                         <IconButton Classes="small outline danger"
                                     IconText="&#xe3da;"
                                     Content="ALL OFF"
                                     Command="{Binding AllOffCommand}"
-                                    ToolTip.Tip="증폭기 → 마스터 순서로 전류 OFF" />
+                                    ToolTip.Tip="모든 레이저의 증폭기 → 마스터 순서로 전류 OFF" />
                     </StackPanel>
                 </Grid>
             </Border>
 
+            <Border Grid.Row="1" Padding="20 8" Background="{DynamicResource CardBackground}">
+                <WrapPanel Orientation="Horizontal">
+                    <Button Content="IP 장비 검색" Command="{Binding DiscoverDevicesCommand}" IsEnabled="{Binding CanEditConnection}" Margin="0 0 10 0" />
+                    <ComboBox Width="350" ItemsSource="{Binding DiscoveredDevices}" SelectedItem="{Binding SelectedDiscoveredDevice}"
+                              IsEnabled="{Binding CanEditConnection}" PlaceholderText="검색된 장비 선택" Margin="0 0 12 0">
+                        <ComboBox.ItemTemplate><DataTemplate x:DataType="core:DiscoveredDevice"><TextBlock Text="{Binding Display}" /></DataTemplate></ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock Text="{Binding DiscoveryStatus}" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="450" />
+                </WrapPanel>
+            </Border>
+
             <!-- 현재 페이지 (ViewLocator가 View를 찾아 표시) -->
             <!-- 대화상자가 떠 있으면 페이지 입력(키보드 포함) 차단 — 비상 버튼은 상단 바에 있으므로 영향 없음 -->
-            <ContentControl Grid.Row="1" Content="{Binding CurrentPage}" IsEnabled="{Binding !IsDialogOpen}" />
+            <ContentControl Grid.Row="2" Content="{Binding CurrentPage}" IsEnabled="{Binding CanUseCurrentPage}" />
 
             <!-- 하단 로그 -->
-            <Border Grid.Row="2"
+            <Border Grid.Row="3"
                     Background="{DynamicResource TableHeaderBackground}"
                     BorderBrush="{DynamicResource CardBorder}"
                     BorderThickness="0 1 0 0">
@@ -209,7 +223,7 @@
             </Border>
 
             <!-- 대화상자 오버레이 (페이지 + 로그 영역만 덮음, 상단 비상 버튼은 항상 사용 가능) -->
-            <Grid Grid.Row="1" Grid.RowSpan="2" IsVisible="{Binding IsDialogOpen}">
+            <Grid Grid.Row="1" Grid.RowSpan="3" IsVisible="{Binding IsDialogOpen}">
                 <Border Background="{DynamicResource DialogOverlay}" Opacity="0.5" />
                 <ContentControl Content="{Binding Dialog}"
                                 HorizontalAlignment="Center"
