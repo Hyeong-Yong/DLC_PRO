@@ -26,9 +26,8 @@
                 <!-- 로고 -->
                 <Button Classes="transparent" Padding="4 0 4 18" Command="{Binding SideMenuResizeCommand}" ToolTip.Tip="메뉴 접기/펼치기">
                     <StackPanel Spacing="0">
-                        <TextBlock Classes="logo" Text="DLC pro" IsVisible="{Binding SideMenuExpanded}" />
-                        <TextBlock Classes="page-subtitle" Text="TOPTICA · Lock Control" IsVisible="{Binding SideMenuExpanded}" />
-                        <TextBlock Classes="logo" Text="D" IsVisible="{Binding !SideMenuExpanded}" HorizontalAlignment="Center" />
+                        <TextBlock Classes="logo" Text="KOPTI" IsVisible="{Binding SideMenuExpanded}" />
+                        <TextBlock Classes="logo" Text="K" IsVisible="{Binding !SideMenuExpanded}" HorizontalAlignment="Center" />
                     </StackPanel>
                 </Button>
 
