@@ -215,7 +215,8 @@ internal static class UiTests
         Check(((HardwarePageViewModel)main.CurrentPage).Lasers.Count == 1, "reconnect correctly detects one laser");
         Check(main.SelectedLaserId == 0 && !main.CanUseLaserControls, "old laser2 controls cannot be reused after reconnect");
         await WavemeterTests.RunOnUi(sp, main, window, output);
-        await dev.DisconnectAsync(); window.Close(); sp.GetRequiredService<WavemeterService>().Dispose(); dev.Dispose(); sp.GetRequiredService<LogService>().Dispose();
+        await dev.DisconnectAsync();
+        await DemoModeTests.RunOnUi(sp, main, window, output); window.Close(); sp.GetRequiredService<WavemeterService>().Dispose(); dev.Dispose(); sp.GetRequiredService<LogService>().Dispose();
         Console.WriteLine($"UI PASS: {_count} assertions; screenshots in {output}");
     }
     private static ScanLockPageViewModel AsScan(this PageViewModel page) => (ScanLockPageViewModel)page;

@@ -53,6 +53,8 @@ internal static class RegressionTests
             if (args.Contains("--ui")) { await UiTests.RunAsync(); return 0; }
             AccessPolicyTests.Run();
             if (args.Contains("--access")) return 0;
+            CalibrationTests.Run();
+            if (args.Contains("--calibration")) return 0;
             var sim = new DlcSim.Sim();
             new Thread(sim.Physics) { IsBackground = true }.Start();
             using var command = Listen(sim.ServeCommand);

@@ -46,7 +46,7 @@ namespace DLC_PRO {
             base.OnFrameworkInitializationCompleted();
         }
 
-        /// <summary>명령줄: --connect &lt;IP&gt; (시작 시 자동 연결), --page &lt;페이지 이름&gt;</summary>
+        /// <summary>명령줄: --connect &lt;IP&gt; (시작 시 자동 연결), --demo (가상 장비 연결), --page &lt;페이지 이름&gt;, --wlm-sim</summary>
         private static void HandleArgs(MainViewModel main, string[] args) {
             string? host = null, page = null;
             for (int i = 0; i + 1 < args.Length; i++) {
@@ -55,6 +55,7 @@ namespace DLC_PRO {
             }
             if (page != null) main.NavigateByName(page);
             if (host != null) Avalonia.Threading.Dispatcher.UIThread.Post(async () => await main.AutoConnectAsync(host));
+            else if (Array.IndexOf(args, "--demo") >= 0) Avalonia.Threading.Dispatcher.UIThread.Post(async () => await main.ConnectDemoCommand.ExecuteAsync(null));
         }
 
         private void DisposeServices() {

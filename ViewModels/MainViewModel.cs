@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DLC_PRO.Core;
+using DLC_PRO.Core.Demo;
 using DLC_PRO.Data;
 using DLC_PRO.Factories;
 using DLC_PRO.Interfaces;
@@ -34,6 +35,7 @@ namespace DLC_PRO.ViewModels {
         private readonly LogService _log;
         private bool _tripDialogOpen;
         private bool _closingConfirmed;
+        private DemoDlcServer? _demo;
 
         public MainViewModel(PageFactory pageFactory, DeviceService dev, DialogService dialogs, LogService log,
                              WavemeterService wlm, WavemeterPageViewModel wavemeter) {
@@ -213,7 +215,7 @@ namespace DLC_PRO.ViewModels {
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(ConnectButtonText), nameof(CanEditConnection), nameof(CanUseLaserControls), nameof(CanUseCurrentPage))]
-        [NotifyCanExecuteChangedFor(nameof(ToggleConnectCommand))]
+        [NotifyCanExecuteChangedFor(nameof(ToggleConnectCommand), nameof(ConnectDemoCommand))]
         private bool _isConnecting;
 
         [ObservableProperty]
@@ -248,6 +250,7 @@ namespace DLC_PRO.ViewModels {
                     if (!await _dialogs.ConfirmAsync("연결 해제", "연결을 끊어도 레이저 출력과 락은 현재 상태를 유지합니다. 연결을 끊을까요?")) return;
                     foreach (var w in _workspaces.Values) w.Dev.Safety.CancelRamp();
                     await _controller.DisconnectAsync();
+                    StopDemo();
                     SelectedLaserId = 0; CurrentPage = _hardware;
                     return;
                 }
@@ -263,10 +266,7 @@ namespace DLC_PRO.ViewModels {
                 _controller.Settings.ConnectionType = usb ? "USB" : "TCP";
                 if (usb) _controller.Settings.ComPort = endpoint; else _controller.Settings.Host = endpoint;
                 _controller.SaveSettings();
-                await _hardware.DetectAsync();
-                PrepareLaserMonitoring();
-                _dev = _controller; _pageFactory = _workspaces[1].Pages;
-                SelectedLaserId = 0; CurrentPage = _hardware;
+                await AfterConnectedAsync();
                 _log.SetStatus("연결 완료 · " + _hardware.Lasers.Count + "대의 레이저를 확인했습니다.");
             }
             catch (Exception ex) {
@@ -275,6 +275,70 @@ namespace DLC_PRO.ViewModels {
                 await _dialogs.AlertAsync("연결 실패", ConnectionErrors.Describe(ex, IsUsb, IsUsb ? ComPort : Host), DialogKind.Warning);
             }
             finally { IsConnecting = false; IsConnected = _controller.IsConnected; }
+        }
+
+        private async Task AfterConnectedAsync() {
+            await _hardware.DetectAsync();
+            PrepareLaserMonitoring();
+            _dev = _controller; _pageFactory = _workspaces[1].Pages;
+            SelectedLaserId = 0; CurrentPage = _hardware;
+        }
+
+        // ------------------------------------------------------------------
+        // 데모 (가상 장비)
+        // ------------------------------------------------------------------
+
+        /// <summary>가상 장비(데모)에 연결되어 있는지. 실제 레이저가 아니다.</summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(DemoBadgeVisible))]
+        private bool _isDemo;
+
+        public bool DemoBadgeVisible => IsDemo && IsConnected;
+
+        /// <summary>
+        /// 하드웨어 없이 제어 UI를 확인하는 데모 연결: 앱 안에서 레이저 2대짜리 가상 DLC pro를 루프백으로 띄우고 연결한다.
+        /// 실제 장비·네트워크에는 접속하지 않으며, 통신 설정(IP/포트)도 저장하지 않는다.
+        /// </summary>
+        [RelayCommand(CanExecute = nameof(CanToggleConnect))]
+        private async Task ConnectDemoAsync() {
+            if (_controller.IsConnected) {
+                _log.SetStatus("먼저 현재 연결을 해제해 주세요.");
+                return;
+            }
+            IsConnecting = true;
+            try {
+                StopDemo();
+                _demo = DemoDlcServer.Start();
+                foreach (var w in _workspaces.Values) w.Dev.Safety.MonitoringEnabled = false;
+                string? error = await _controller.TryConnectTcpAsync("127.0.0.1", _demo.CommandPort, _demo.MonitorPort);
+                if (error != null) {
+                    StopDemo();
+                    await _dialogs.AlertAsync("데모 연결 실패", error, DialogKind.Warning);
+                    return;
+                }
+                IsDemo = true;
+                await AfterConnectedAsync();
+                _log.Warn("데모 모드: 가상 장비(레이저 " + _hardware.Lasers.Count + "대)에 연결했습니다. 실제 레이저가 아닙니다.");
+                _log.SetStatus("데모(가상 장비) 연결 · 실제 레이저가 아닙니다");
+            }
+            catch (Exception ex) {
+                _log.Error("데모 연결 실패: " + ex.Message);
+                try { await _controller.DisconnectAsync(); } catch { }
+                StopDemo();
+            }
+            finally { IsConnecting = false; IsConnected = _controller.IsConnected; }
+        }
+
+        private void StopDemo() {
+            DemoDlcServer? d = _demo;
+            _demo = null;
+            IsDemo = false;
+            d?.Dispose();
+        }
+
+        partial void OnIsConnectedChanged(bool value) {
+            OnPropertyChanged(nameof(DemoBadgeVisible));
+            if (!value && _demo != null && !IsConnecting) StopDemo();
         }
 
         public ObservableCollection<DiscoveredDevice> DiscoveredDevices { get; } = new();
@@ -339,7 +403,7 @@ namespace DLC_PRO.ViewModels {
                 CurrentPage = _hardware;
             }
             ConnectionLed = con ? LedState.On : LedState.Off;
-            EndpointText = con ? ("연결: " + d.Endpoint + (d.MonitorAvailable ? " (monitor)" : " (polling)")) : "연결 안 됨";
+            EndpointText = con ? ((IsDemo ? "데모 " : "연결: ") + d.Endpoint + (d.MonitorAvailable ? " (monitor)" : " (polling)")) : "연결 안 됨";
 
             EmissionLed = con && d.TryGetBool(P.Emission, out bool em) && em ? LedState.Emission : LedState.Off;
             InterlockLed = con && d.TryGetBool(P.InterlockOpen, out bool il) ? (il ? LedState.Error : LedState.On) : LedState.Off;
@@ -354,7 +418,7 @@ namespace DLC_PRO.ViewModels {
             UserLevelText = "UL " + (con ? d.GetInt(P.UserLevel, -1).ToString() : "-");
             int nm = d.GetInt(P.MsgCountNew, 0);
             MessagesText = con && nm > 0 ? "새 시스템 메시지 " + nm + "개" : "";
-            WindowTitle = "DLC pro Control · " + SelectedLaserText + (con ? " — " + (d.GetString(P.LaserType) ?? "") + " @ " + d.Endpoint : "");
+            WindowTitle = (IsDemo ? "[DEMO] " : "") + "DLC pro Control · " + SelectedLaserText + (con ? " — " + (d.GetString(P.LaserType) ?? "") + " @ " + d.Endpoint : "");
         }
 
         private void UpdateWavemeterReadout() {

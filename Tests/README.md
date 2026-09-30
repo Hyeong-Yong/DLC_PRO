@@ -6,6 +6,9 @@
 - AccessPolicyTests: Maximum Current·공장·교정값 쓰기, 권한 상승, 알 수 없는 명령, 원시 표현식/복합 명령 우회가 전송 전에 거부되는지 기록용 전송 계층으로 확인. `-- --access`로 단독 실행 가능.
 - DualLaserRig / UiTests: 독립된 두 레이저를 모사하는 루프백 TCP 장비와 UDP 검색 응답을 사용. Avalonia 화면을 실제 Skia 렌더러로 생성하고 경고창, 재연결, 대상별 명령, 전체 OFF, 글꼴, Wide Scan 상태 변경을 검증.
 - WavemeterTests: UI 테스트 끝에서 실행. WLM 시뮬레이터 백엔드로 Start→측정→별도 LongTerm 창, 설정 쓰기/거부 복원, 오류 표시, TSV 저장, 연결 해제 시 측정 유지 확인. 실제 wlmData.dll은 호출하지 않습니다.
+- CalibrationTests: 튜닝 계수 교정 엔진. `Tests/Data/PS_D2_line2.csv`(FAIL), `PS_D2_line3.csv`(SUCCESS 329.6 MHz/V), 7S 합성 데이터, CSV 형식, 기본 328 MHz/V·레이저별 저장, LongTerm 기본 단위를 확인합니다. `-- --calibration`로 단독 실행할 수 있습니다.
+- DemoModeTests: UI 테스트 끝에서 실행합니다. 데모(가상 장비) 연결 → 레이저 2대 → 레이저별 교정(현재 스캔, CSV) → 연결 해제를 확인합니다.
+- 시뮬레이터(DlcSim.Sim)는 앱의 `Core/Demo/DlcSimulator.cs`에 있습니다(데모 모드와 공용).
 - 앱 설정은 임시 디렉터리로 분리합니다. 실제 사용자 설정과 실제 장비는 사용하지 않습니다.
 - 화면 이미지는 `Tests/artifacts/`에 생성됩니다. 이 디렉터리와 빌드 결과는 Git 추적 대상에서 제외합니다.
 - 한글 글꼴 테스트는 Windows의 맑은 고딕을 기준으로 합니다.

@@ -1,8 +1,9 @@
-// DLC pro 간이 시뮬레이터 (장비 없이 GUI/통신 테스트용)
-// - 명령 포트 1998, 모니터링 포트 1999 (기본값) 을 흉내낸다
+#nullable disable
+// DLC pro 간이 시뮬레이터 (장비 없이 GUI/통신 확인용 — 데모 모드와 회귀 테스트가 함께 사용)
 // - Command Reference의 param-ref / param-set! / exec / 모니터링 add/remove 일부만 구현
-// - 세슘 포화흡수분광(SAS)과 비슷한 스펙트럼, 락 후보 검출, 락/언락, 와이드스캔, 레코더를 단순 모델로 흉내
-// 실행: dotnet run --project tools/DlcSim -- [cmdPort] [monPort]
+// - 기본 스펙트럼: 세슘 포화흡수분광(SAS)과 비슷한 모양. 데모 모드는 SpectrumOverride로 Cs D2 편광 분광/1470 nm 스펙트럼을 넣는다
+// - 락 후보 검출, 락/언락, 와이드스캔, 레코더를 단순 모델로 흉내
+// 실제 장비와는 통신하지 않는다 (루프백 TCP로만 제공: Core/Demo/DemoDlcServer.cs)
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -16,33 +17,6 @@ using System.Threading;
 
 namespace DlcSim
 {
-    internal static class Program
-    {
-        private static void Main(string[] args)
-        {
-            int cmdPort = args.Length > 0 ? int.Parse(args[0]) : 1998;
-            int monPort = args.Length > 1 ? int.Parse(args[1]) : 1999;
-            Sim sim = new Sim();
-            new Thread(() => sim.Physics()) { IsBackground = true }.Start();
-            new Thread(() => Listen(cmdPort, c => sim.ServeCommand(c))) { IsBackground = true }.Start();
-            new Thread(() => Listen(monPort, c => sim.ServeMonitor(c))) { IsBackground = true }.Start();
-            Console.WriteLine("DLC pro 시뮬레이터 실행 중: 명령 " + cmdPort + ", 모니터 " + monPort + " (종료: Ctrl+C)");
-            Thread.Sleep(Timeout.Infinite);
-        }
-
-        private static void Listen(int port, Action<TcpClient> serve)
-        {
-            TcpListener l = new TcpListener(IPAddress.Any, port);
-            l.Start();
-            while (true)
-            {
-                TcpClient c = l.AcceptTcpClient();
-                c.NoDelay = true;
-                new Thread(() => { try { serve(c); } catch { } finally { c.Close(); } }) { IsBackground = true }.Start();
-            }
-        }
-    }
-
     internal sealed class Sim
     {
         private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
@@ -173,9 +147,19 @@ namespace DlcSim
         // 물리 모델
         // ------------------------------------------------------------------
 
+        /// <summary>데모 모드용 스펙트럼 (null이면 기본 SAS 유사 신호).</summary>
+        internal Func<double, double> SpectrumOverride;
+
+        /// <summary>읽기 전용 값을 포함해 파라미터를 직접 설정 (데모 초기화용).</summary>
+        internal void Force(string n, string v) { lock (_lk) { if (v == null) _p.Remove(n); else _p[n] = v; } }
+
+        /// <summary>Physics 루프 종료 요청.</summary>
+        internal volatile bool Stopped;
+
         /// <summary>세슘 D2 SAS 유사 신호: 도플러 흡수 배경 + Lamb dip(피크) 6개. x: 피에조 전압 V</summary>
         private double Spectrum(double x)
         {
+            if (SpectrumOverride != null) return SpectrumOverride(x);
             double doppler = -1.2 * Math.Exp(-Math.Pow((x - 70) / 22.0, 2));
             double[] pos = { 58, 63, 66.5, 70, 73.5, 80 };
             double[] amp = { 0.25, 0.35, 0.55, 0.30, 0.8, 0.45 };
@@ -187,7 +171,7 @@ namespace DlcSim
         public void Physics()
         {
             DateTime start = DateTime.UtcNow;
-            while (true)
+            while (!Stopped)
             {
                 Thread.Sleep(50);
                 lock (_lk)
@@ -439,7 +423,7 @@ namespace DlcSim
             }
         }
 
-        private string Eval(string line)
+        internal string Eval(string line)
         {
             Match m;
             if ((m = RefRx.Match(line)).Success)

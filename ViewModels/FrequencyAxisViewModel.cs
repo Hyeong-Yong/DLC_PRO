@@ -84,6 +84,19 @@ namespace DLC_PRO.ViewModels {
             _dev.NotifyFreqChanged();   // 저장 + 모든 그래프/패널 동기화 (LoadFromSettings 포함)
         }
 
+        /// <summary>
+        /// 스펙트럼 교정 결과를 튜닝 계수 입력란에 넣고 저장 (설정 파일 → 프로그램을 꺼도 유지).
+        /// </summary>
+        public void ApplyCalibration(double ghzPerV, string presetId, string source) {
+            FrequencyAxisSettings s = _dev.Settings.Freq;
+            s.CalibrationPreset = presetId;
+            s.CalibratedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+            s.CalibrationSource = source;
+            s.CalibrationMHzPerV = ghzPerV * 1000;
+            Coefficient = ToDecimal(Math.Round(ghzPerV, 6));   // → Save() → 설정 저장 + 모든 화면 동기화
+            Save();   // 값이 같아 변경 알림이 없어도 교정 정보는 저장
+        }
+
         [RelayCommand]
         private void CenterToZero() {
             double v = _centerVolt();

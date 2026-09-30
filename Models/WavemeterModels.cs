@@ -46,7 +46,7 @@ namespace DLC_PRO.Models {
         public string RangeNames = "330 - 1000 nm;1000 - 1750 nm";
 
         // LongTerm 창
-        public int LtUnit = -1;            // -1 = WLM Result unit 따름
+        public int LtUnit = 0;             // -1 = WLM Result unit 따름, 0 = Wavelength, vac. [nm] (기본)
         public bool LtDelta;               // Δf [MHz] 표시
         public bool LtTimeAxis;
         public int LtPerPage = 10000;
@@ -75,6 +75,8 @@ namespace DLC_PRO.Models {
                 s.ShowSignal = B(kv, "ShowSignal", s.ShowSignal);
                 if (kv.TryGetValue("RangeNames", out string? rn) && rn.Length > 0) s.RangeNames = rn;
                 s.LtUnit = (int)N(kv, "LongTerm.Unit", s.LtUnit);
+                // 버전 1 파일의 -1은 예전 기본값(WLM 단위 따름) → 새 기본값 Wavelength, vac.으로
+                if (N(kv, "Version", 1) < 2 && s.LtUnit == -1) s.LtUnit = 0;
                 s.LtDelta = B(kv, "LongTerm.Delta", s.LtDelta);
                 s.LtTimeAxis = B(kv, "LongTerm.TimeAxis", s.LtTimeAxis);
                 s.LtPerPage = (int)N(kv, "LongTerm.PerPage", s.LtPerPage);
@@ -98,7 +100,7 @@ namespace DLC_PRO.Models {
         }
 
         public void Sanitize() {
-            if (LtUnit < -1 || LtUnit > 4) LtUnit = -1;
+            if (LtUnit < -1 || LtUnit > 4) LtUnit = 0;
             if (LtPerPage < 10 || LtPerPage > 1_000_000) LtPerPage = 10000;
             if (LtStatCount < 2 || LtStatCount > 1_000_000) LtStatCount = 10;
             if (!(LtWidth >= 400 && LtWidth <= 10000)) LtWidth = 980;
@@ -113,6 +115,7 @@ namespace DLC_PRO.Models {
                 CultureInfo inv = CultureInfo.InvariantCulture;
                 StringBuilder b = new StringBuilder();
                 b.AppendLine("# DLC_PRO 파장계(WLM) 설정");
+                b.AppendLine("Version=2");
                 b.AppendLine("OpenLongTermOnStart=" + T(OpenLongTermOnStart));
                 b.AppendLine("AutoConnect=" + T(AutoConnect));
                 b.AppendLine("ShowSignal=" + T(ShowSignal));

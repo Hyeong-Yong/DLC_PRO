@@ -1,0 +1,59 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:DLC_PRO.ViewModels"
+             xmlns:cal="using:DLC_PRO.Core.Calibration"
+             mc:Ignorable="d" d:DesignWidth="440" d:DesignHeight="700"
+             x:Class="DLC_PRO.Views.Controls.TuningCalibrationView"
+             x:DataType="vm:TuningCalibrationViewModel">
+    <!-- 스캔 스펙트럼으로 튜닝 계수 교정 (레이저별) -->
+    <Card Header="{Binding LaserTitle}" IconText="&#xe1d6;">
+        <StackPanel Spacing="8">
+            <TextBlock Classes="hint" Text="① 왼쪽 그래프 위 [스캔 CSV 저장]  ② 전이 선택  ③ [CSV 불러와 교정] — 이론 선 간격 ÷ 측정 전압 간격 = 튜닝 계수. 성공하면 위 튜닝 계수에 자동 입력·저장됩니다." />
+            <Grid ColumnDefinitions="Auto, *" ColumnSpacing="10">
+                <TextBlock Classes="row-label" Text="전이" />
+                <ComboBox Grid.Column="1" Classes="param" HorizontalAlignment="Stretch" ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset}">
+                    <ComboBox.ItemTemplate><DataTemplate DataType="cal:CalibrationPreset"><TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" /></DataTemplate></ComboBox.ItemTemplate>
+                </ComboBox>
+            </Grid>
+            <TextBlock Classes="hint" Text="{Binding PresetDescription}" />
+            <Grid ColumnDefinitions="Auto, *" ColumnSpacing="10">
+                <TextBlock Classes="row-label" Text="주파수 방향" />
+                <ComboBox Grid.Column="1" Classes="param" HorizontalAlignment="Stretch" ItemsSource="{Binding Directions}" SelectedIndex="{Binding DirectionIndex}" />
+            </Grid>
+            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="10">
+                <TextBlock Classes="row-label" Text="간격 일치 허용" />
+                <ParamNumericUpDown Grid.Column="1" CommittedValue="{Binding TolerancePercent}" FormatString="0.0" Increment="0.5" Minimum="0.1" Maximum="50" />
+                <TextBlock Grid.Column="2" Classes="unit" Text="%" />
+            </Grid>
+            <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8">
+                <IconButton Classes="small" IconText="&#xe248;" Content="CSV 불러와 교정" Command="{Binding LoadCsvCommand}" IsEnabled="{Binding !IsBusy}" />
+                <IconButton Classes="small outline" IconText="&#xe154;" Content="현재 스캔으로 교정" Command="{Binding UseCurrentScanCommand}"
+                            IsVisible="{Binding CanUseCurrentScan}" IsEnabled="{Binding !IsBusy}" />
+            </WrapPanel>
+            <Grid ColumnDefinitions="Auto, *" ColumnSpacing="10" IsVisible="{Binding HasColumns}">
+                <TextBlock Classes="row-label" Text="신호 열" />
+                <ComboBox Grid.Column="1" Classes="param" HorizontalAlignment="Stretch" ItemsSource="{Binding Columns}" SelectedIndex="{Binding SelectedColumn}" />
+            </Grid>
+            <TextBlock Classes="hint" Text="{Binding SourceText}" />
+            <TextBlock Classes="hint" Text="분석 중… (수 초)" IsVisible="{Binding IsBusy}" Foreground="{DynamicResource AmberAccent}" />
+
+            <Border Classes="readout" Padding="10 8" IsVisible="{Binding HasResult}">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="{Binding ResultTitle}" FontWeight="Bold" FontSize="14" TextWrapping="Wrap"
+                               Classes="result" Classes.ok="{Binding IsSuccess}">
+                        <TextBlock.Styles>
+                            <Style Selector="TextBlock.result"><Setter Property="Foreground" Value="{DynamicResource RedAccent}" /></Style>
+                            <Style Selector="TextBlock.result.ok"><Setter Property="Foreground" Value="#22C55E" /></Style>
+                        </TextBlock.Styles>
+                    </TextBlock>
+                    <TextBlock Text="{Binding ResultText}" FontFamily="{DynamicResource MonoFontFamily}" FontSize="11.5" TextWrapping="Wrap"
+                               Foreground="{DynamicResource LightForeground}" />
+                </StackPanel>
+            </Border>
+            <PlotView Model="{Binding Plot}" Height="230" IsVisible="{Binding HasResult}" />
+            <TextBlock Classes="info" Text="{Binding LastCalibrationText}" />
+        </StackPanel>
+    </Card>
+</UserControl>

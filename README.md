@@ -14,6 +14,14 @@ dotnet run --project DLC_PRO.csproj
 
 **장비 보호값은 읽기 전용입니다.** Maximum Current, 공장값, 교정 계수는 변경할 수 없습니다. Console은 단일 조회 명령만 허용하며, Maintenance/Service 권한 상승은 차단됩니다. Settings의 **앱 전류 상한**은 장비 공장값을 바꾸지 않는 소프트웨어 제한입니다. 자세한 범위는 [읽기 전용 보호](Docs/보호값_읽기전용.md)를 참고하세요.
 
+## 튜닝 계수 교정 · 데모 모드
+
+- **튜닝 계수 교정**: Scan & Lock → MHz 축 탭. [스캔 CSV 저장]으로 저장한 스캔(또는 현재 스캔)에서 Cs D2(F'=5–F'=4, F'=5–F'=3) 또는 6P3/2→7S1/2(F''=4–F''=3) 간격으로 피에조 튜닝 계수를 계산합니다.
+  - 간격 일치(기본 3 %)와 분산형 우세(0 V 기준 대칭도) 조건을 통과하면 입력란에 넣고 레이저별로 저장합니다.
+  - 기본값은 328 MHz/V입니다.
+- **데모 모드**: 연결 막대의 [데모 연결 (가상 장비)] 또는 `-- --demo`를 쓰면, 하드웨어 없이 레이저 2대짜리 가상 DLC pro로 모든 제어 UI를 볼 수 있습니다. 루프백으로만 동작하며 실제 장비에는 접속하지 않습니다.
+- 자세한 내용은 [튜닝 계수 교정·데모 모드](Docs/튜닝계수_교정_데모모드_2026-10-01.md)를 참고하세요.
+
 ## 파장계 (HighFinesse WS/6)
 
 사이드 메뉴 **Wavemeter**에서 WLM 주 화면의 설정(Result unit, Range, Pulse, Precision, Exposure, Interval, Autocalibration, Average)을 조작합니다. **Start**를 누르면 측정을 시작하고 **WLM LongTerm graph** 창이 별도 창으로 열립니다. 레이저 제어 창과 나란히 파장이나 주파수 추세를 볼 수 있습니다. 상단 바에도 WLM 현재 값이 표시됩니다.
@@ -35,3 +43,4 @@ dotnet run --project Tests/DLC_PRO.Tests.csproj
 - [기존 안전성 검토](Docs/검토_수정_2026-09-29.md)
 - [연결 경고·다중 레이저·그래프 및 추가 버그 수정](Docs/업데이트_2026-09-30.md)
 - [파장계(WS/6) 연동 · LongTerm 창](Docs/파장계_WLM_연동.md)
+- [튜닝 계수 교정 · 데모 모드 · LongTerm 기본 단위](Docs/튜닝계수_교정_데모모드_2026-10-01.md)

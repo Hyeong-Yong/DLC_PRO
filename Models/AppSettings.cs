@@ -66,11 +66,17 @@ namespace DLC_PRO.Models {
                 s.Freq.CoefGHzPerV = Num(kv, "Freq.CoefGHzPerV", s.Freq.CoefGHzPerV);
                 s.Freq.UseCustomZero = Str(kv, "Freq.UseCustomZero", "false") == "true";
                 s.Freq.ZeroVoltage = Num(kv, "Freq.ZeroVoltage", s.Freq.ZeroVoltage);
+                s.Freq.CalibrationPreset = Str(kv, "Freq.Calibration.Preset", "");
+                s.Freq.CalibratedAt = Str(kv, "Freq.Calibration.Time", "");
+                s.Freq.CalibrationSource = Str(kv, "Freq.Calibration.Source", "");
+                s.Freq.CalibrationMHzPerV = Num(kv, "Freq.Calibration.MHzPerV", double.NaN);
             }
             catch {
                 // 설정 파일이 손상되어도 기본값으로 시작
             }
             s.Safety.Sanitize();
+            // 계수 0(미설정·초기화)이면 기본 328 MHz/V
+            if (!s.Freq.HasCoefficient || Math.Abs(s.Freq.CoefGHzPerV) > 1000) s.Freq.CoefGHzPerV = FrequencyAxisSettings.DefaultCoefGHzPerV;
             if (s.CmdPort <= 0 || s.CmdPort > 65535) s.CmdPort = 1998;
             if (s.MonPort <= 0 || s.MonPort > 65535) s.MonPort = 1999;
             if (s.ScopeMaxRate < 0.5 || s.ScopeMaxRate > 30) s.ScopeMaxRate = 15;
@@ -102,6 +108,10 @@ namespace DLC_PRO.Models {
                 sb.AppendLine("Freq.CoefGHzPerV=" + Freq.CoefGHzPerV.ToString("R", inv));
                 sb.AppendLine("Freq.UseCustomZero=" + B(Freq.UseCustomZero));
                 sb.AppendLine("Freq.ZeroVoltage=" + Freq.ZeroVoltage.ToString("R", inv));
+                sb.AppendLine("Freq.Calibration.Preset=" + Freq.CalibrationPreset);
+                sb.AppendLine("Freq.Calibration.Time=" + Freq.CalibratedAt);
+                sb.AppendLine("Freq.Calibration.Source=" + Freq.CalibrationSource.Replace('\n', ' ').Replace('\r', ' '));
+                sb.AppendLine("Freq.Calibration.MHzPerV=" + (double.IsNaN(Freq.CalibrationMHzPerV) ? "" : Freq.CalibrationMHzPerV.ToString("R", inv)));
                 File.WriteAllText(FilePath, sb.ToString(), Encoding.UTF8);
             }
             catch {

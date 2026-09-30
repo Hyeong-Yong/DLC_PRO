@@ -6,6 +6,7 @@
              xmlns:vm="using:DLC_PRO.ViewModels"
              xmlns:m="using:DLC_PRO.Models"
              xmlns:conv="using:DLC_PRO.Converters"
+             xmlns:vc="using:DLC_PRO.Views.Controls"
              mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
              x:Class="DLC_PRO.Views.Pages.ScanLockPageView"
              x:DataType="pages:ScanLockPageViewModel"
@@ -33,6 +34,8 @@
                 <CheckBox Content="화면 정지" IsChecked="{Binding Freeze}" />
                 <CheckBox Content="X축 MHz" IsChecked="{Binding ShowMhz}" />
                 <Button Classes="small outline" Content="자동 스케일" Command="{Binding ResetScaleCommand}" />
+                <IconButton Classes="small outline" IconText="&#xe248;" Content="스캔 CSV 저장" Command="{Binding SaveScanCsvCommand}"
+                            ToolTip.Tip="현재 스캔 그래프를 피에조 전압(V) 기준 CSV로 저장 (튜닝 계수 교정용, MHz 표시와 무관)" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <Ellipse Classes="led" Classes.lit="{Binding LockLed, Converter={x:Static conv:LedIsLitConverter.Instance}}" Fill="{Binding LockLed, Converter={x:Static conv:LedBrushConverter.Instance}}" />
                     <TextBlock Text="{Binding LockStateText}" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"
@@ -109,9 +112,10 @@
                                     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="기준 전압 (0 MHz)" Margin="0 0 12 0" /><NumericUpDown Grid.Column="1" Classes="compact" FormatString="F4" Increment="0.01" Minimum="-1000" Maximum="1000" Value="{Binding FreqAxis.ZeroVoltage}" IsEnabled="{Binding FreqAxis.UseCustomZero}" /><TextBlock Grid.Column="2" Classes="unit" Text="V" /></Grid>
                                     <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8"><Button Classes="small outline" Content="현재 스캔 중심 → 기준" Command="{Binding FreqAxis.CenterToZeroCommand}" /><Button Classes="small outline" Content="현재 락 포인트 → 기준" Command="{Binding FreqAxis.LockpointToZeroCommand}" IsVisible="{Binding FreqAxis.HasLockpointButton}" /></WrapPanel>
                                     <TextBlock Classes="info" Text="{Binding FreqAxis.Info}" />
-                                    <TextBlock Classes="hint" Text="계수는 레이저 헤드 사양서의 피에조 튜닝 계수입니다. 전압을 올릴 때 주파수가 내려가면 음수로 입력하세요. 0이면 변환하지 않고 전압(V)으로 표시합니다." />
+                                    <TextBlock Classes="hint" Text="계수는 피에조 튜닝 계수입니다 (기본 0.328 GHz/V = 328 MHz/V). 아래 교정으로 구하거나 직접 입력하세요. 전압을 올릴 때 주파수가 내려가면 음수입니다. 값은 레이저별로 저장됩니다." />
                                 </StackPanel>
                             </Card>
+                            <vc:TuningCalibrationView DataContext="{Binding Calibration}" />
                         </StackPanel>
                     </ScrollViewer>
                 </TabItem>

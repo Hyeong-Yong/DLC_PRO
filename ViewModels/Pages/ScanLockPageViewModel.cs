@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DLC_PRO.Core;
+using DLC_PRO.Core.Calibration;
 using DLC_PRO.Data;
 using DLC_PRO.Models;
 using DLC_PRO.Models.Plot;
@@ -87,6 +88,7 @@ namespace DLC_PRO.ViewModels.Pages {
 
             // ---------------- MHz 축 ----------------
             FreqAxis = new FrequencyAxisViewModel(dev, log, ScanCenterVolt, "스캔 중심(Scan Offset)", LockpointVolt);
+            Calibration = new TuningCalibrationViewModel(dev, log, dialogs, FreqAxis, CurrentScanData);
 
             // ---------------- PID ----------------
             Pid1 = new PidViewModel(dev, 1);
@@ -129,6 +131,7 @@ namespace DLC_PRO.ViewModels.Pages {
 
         public PlotModel Plot { get; }
         public FrequencyAxisViewModel FreqAxis { get; }
+        public TuningCalibrationViewModel Calibration { get; }
         public PidViewModel Pid1 { get; }
         public PidViewModel Pid2 { get; }
 
@@ -235,6 +238,57 @@ namespace DLC_PRO.ViewModels.Pages {
         [RelayCommand]
         private void ResetScale() => Plot.ResetScale();
 
+        /// <summary>현재 스코프 X축이 피에조 전압인지 (XY 모드, X=[50] 또는 [101]+스캔 출력 [50]).</summary>
+        private bool ScopeXIsPiezo() {
+            DlcDevice d = Dev.Device;
+            if (!d.TryGetInt(P.ScopeVariant, out int variant) || variant != 0) return false;
+            if (!d.TryGetInt(P.ScopeXSignal, out int xs) || !d.TryGetInt(P.ScanOutputChannel, out int so)) return false;
+            return xs == 50 || (xs == 101 && so == 50);
+        }
+
+        /// <summary>교정용: 최근 스코프 프레임 (피에조 전압 vs CH1). 조건이 맞지 않으면 null.</summary>
+        private SpectrumData? CurrentScanData() {
+            ScopeFrame? f = _shown ?? _latest;
+            if (f?.X == null || f.Y1 == null || f.X.Length < 100 || !ScopeXIsPiezo()) return null;
+            int n = Math.Min(f.X.Length, f.Y1.Length);
+            var pts = new List<(double x, double y)>(n);
+            for (int i = 0; i < n; i++) if (float.IsFinite(f.X[i]) && float.IsFinite(f.Y1[i])) pts.Add((f.X[i], f.Y1[i]));
+            pts.Sort((a, b) => a.x.CompareTo(b.x));
+            string xn = AxisLabel(Dev.Device.GetString(P.ScopeXName) ?? "Piezo Voltage", "V");
+            string yn = AxisLabel(Dev.Device.GetString(P.ScopeCh1Name) ?? "CH1", Dev.Device.GetString(P.ScopeCh1Unit));
+            return new SpectrumData {
+                X = pts.ConvertAll(p => p.x).ToArray(), Y = pts.ConvertAll(p => p.y).ToArray(),
+                XName = xn, YName = yn, Columns = new[] { xn, yn }, YColumn = 1,
+                Source = "현재 스캔 " + DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture),
+            };
+        }
+
+        /// <summary>
+        /// 현재 스캔 그래프를 CSV로 저장 (X = 피에조 전압 V 그대로, DLC pro 내보내기와 같은 형식).
+        /// MHz 축 표시와 관계없이 전압으로 저장하므로 튜닝 계수 교정에 바로 쓸 수 있다.
+        /// </summary>
+        [RelayCommand]
+        private async Task SaveScanCsvAsync() {
+            ScopeFrame? f = _shown ?? _latest;
+            if (f?.X == null || f.Y1 == null || f.X.Length == 0) {
+                await _dialogs.AlertAsync("스캔 CSV 저장", "저장할 스캔 데이터가 없습니다. 스캔을 켜고 스펙트럼이 보이는 상태에서 저장해 주세요.", DialogKind.Info);
+                return;
+            }
+            if (!ScopeXIsPiezo())
+                _log.Warn("스캔 CSV: 스코프 X축이 피에조 전압이 아닙니다. 이 파일은 튜닝 계수 교정에 쓸 수 없습니다.");
+            string? path = await _dialogs.SaveFilePickerAsync("스캔 데이터 CSV 저장", "scan_laser" + Dev.Device.LaserId + "_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".csv", "CSV", "*.csv");
+            if (path == null) return;
+            try {
+                DlcDevice d = Dev.Device;
+                string xn = AxisLabel(d.GetString(P.ScopeXName) ?? "X", d.GetString(P.ScopeXUnit));
+                var ys = new List<(string, IReadOnlyList<float>)> { (AxisLabel(d.GetString(P.ScopeCh1Name) ?? "CH1", d.GetString(P.ScopeCh1Unit)), f.Y1) };
+                if (f.Y2 != null) ys.Add((AxisLabel(d.GetString(P.ScopeCh2Name) ?? "CH2", d.GetString(P.ScopeCh2Unit)), f.Y2));
+                SpectrumCsv.Save(path, xn, f.X, ys);
+                _log.Info("스캔 CSV 저장: " + path + " (" + f.X.Length + "점)");
+            }
+            catch (Exception ex) { Dev.ReportError("스캔 CSV 저장 실패: " + ex.Message); }
+        }
+
         /// <summary>그래프 클릭 → 락 포인트 선택 (laser1:dl:lock:select-lockpoint x y 0).</summary>
         [RelayCommand]
         private async Task SelectLockpointAsync(PlotPoint p) {
@@ -292,13 +346,9 @@ namespace DLC_PRO.ViewModels.Pages {
         /// (XY 모드 + X 신호가 [50] Piezo 또는 [101] 스캔 출력 채널이면서 스캔 출력이 [50] Piezo)
         /// </summary>
         private FrequencyTransform? CurrentTransform() {
-            DlcDevice d = Dev.Device;
             FrequencyAxisSettings s = Dev.Settings.Freq;
             if (!s.ShowFrequency || !s.HasCoefficient) return null;
-            if (!d.TryGetInt(P.ScopeVariant, out int variant) || variant != 0) return null;
-            if (!d.TryGetInt(P.ScopeXSignal, out int xs) || !d.TryGetInt(P.ScanOutputChannel, out int so)) return null;
-            bool piezoX = xs == 50 || (xs == 101 && so == 50);
-            if (!piezoX) return null;
+            if (!ScopeXIsPiezo()) return null;
             return FrequencyTransform.Create(s, ScanCenterVolt());
         }
 

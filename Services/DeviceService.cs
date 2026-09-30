@@ -90,6 +90,22 @@ namespace DLC_PRO.Services {
             }
         });
 
+        /// <summary>
+        /// 지정한 포트로 TCP 연결 (설정 파일의 포트는 바꾸지 않음) — 데모(가상 장비) 연결용.
+        /// 실패하면 사용자 메시지, 성공하면 null.
+        /// </summary>
+        public Task<string?> TryConnectTcpAsync(string host, int cmdPort, int monPort) => Task.Run<string?>(() => {
+            try {
+                Device.ConnectTcp(host, cmdPort, monPort);
+                return null;
+            }
+            catch (Exception ex) {
+                _log.Error("연결 실패: " + Unwrap(ex).Message);
+                try { Device.Disconnect(); } catch { }
+                return ConnectionErrors.Describe(ex, false, host + ":" + cmdPort);
+            }
+        });
+
         private void OnTick() {
             int n = 0;
             while (n++ < 100 && _uiQueue.TryDequeue(out Action? a)) {

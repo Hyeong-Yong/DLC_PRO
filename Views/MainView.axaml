@@ -131,6 +131,10 @@
 
                     <!-- 상태 표시 -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" ClipToBounds="True">
+                        <Border IsVisible="{Binding DemoBadgeVisible}" Background="{DynamicResource AmberAccent}" CornerRadius="6" Padding="8 3"
+                                ToolTip.Tip="가상 장비(데모)에 연결되어 있습니다. 실제 레이저가 아닙니다.">
+                            <TextBlock Text="DEMO · 가상 장비" FontWeight="Bold" FontSize="12" Foreground="#111827" />
+                        </Border>
                         <Border Width="1" Height="24" Background="{DynamicResource CardBorderSubtle}" />
                         <TextBlock Classes="status" Text="Emission" />
                         <Ellipse Classes="led"
@@ -183,7 +187,10 @@
                               IsEnabled="{Binding CanEditConnection}" PlaceholderText="검색된 장비 선택" Margin="0 0 12 0">
                         <ComboBox.ItemTemplate><DataTemplate x:DataType="core:DiscoveredDevice"><TextBlock Text="{Binding Display}" /></DataTemplate></ComboBox.ItemTemplate>
                     </ComboBox>
-                    <TextBlock Text="{Binding DiscoveryStatus}" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="450" />
+                    <TextBlock Text="{Binding DiscoveryStatus}" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="450" Margin="0 0 16 0" />
+                    <IconButton Classes="small outline" IconText="&#xe2a0;" Content="데모 연결 (가상 장비)" Command="{Binding ConnectDemoCommand}"
+                                IsEnabled="{Binding CanEditConnection}"
+                                ToolTip.Tip="하드웨어 없이 제어 UI 확인: 앱 안의 가상 DLC pro(레이저 2대)에 연결합니다. 실제 장비에는 접속하지 않습니다." />
                 </WrapPanel>
             </Border>
 

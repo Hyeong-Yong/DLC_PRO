@@ -79,6 +79,21 @@ namespace DLC_PRO.Services {
             return vm.Result;
         }
 
+        /// <summary>열 파일 선택. 취소 시 null.</summary>
+        public async Task<string?> OpenFilePickerAsync(string title, string typeName, params string[] patterns) {
+            TopLevel? top = _topLevel();
+            if (top == null) return null;
+            var files = await top.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
+                Title = title,
+                AllowMultiple = false,
+                FileTypeFilter = new[] {
+                    new FilePickerFileType(typeName) { Patterns = patterns },
+                    new FilePickerFileType("모든 파일") { Patterns = new[] { "*" } },
+                },
+            });
+            return files.Count > 0 ? files[0].TryGetLocalPath() : null;
+        }
+
         /// <summary>저장 파일 선택. 취소 시 null.</summary>
         public async Task<string?> SaveFilePickerAsync(string title, string suggestedName, string typeName, string pattern) {
             TopLevel? top = _topLevel();
