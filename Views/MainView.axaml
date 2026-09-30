@@ -34,7 +34,9 @@
                 <!-- 페이지 메뉴 -->
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Spacing="10">
-                        <Button Classes="subtle" HorizontalAlignment="Stretch" Command="{Binding GoToHardwareCommand}" Content="하드웨어 상태" />
+                        <IconButton Classes="subtle" IconText="&#xe2a0;" HorizontalAlignment="Stretch" Classes.active="{Binding HardwarePageIsActive}" Command="{Binding GoToHardwareCommand}" ToolTip.Tip="하드웨어 상태">
+                            <Label Content="하드웨어 상태" IsVisible="{Binding SideMenuExpanded}" />
+                        </IconButton>
                         <IconButton Classes="subtle" IconText="&#xe1d6;" HorizontalAlignment="Stretch" Classes.active="{Binding WavemeterPageIsActive}" Command="{Binding GoToWavemeterCommand}" ToolTip.Tip="Wavemeter (HighFinesse WS/6)">
                             <Label Content="Wavemeter" IsVisible="{Binding SideMenuExpanded}" />
                         </IconButton>
