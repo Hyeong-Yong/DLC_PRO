@@ -30,10 +30,7 @@ namespace DLC_PRO.ViewModels.Pages {
             CcEmission = Track(LedRowViewModel.FromBool(dev, "Emission", P.DlCcEmission, LedState.On));
             CcCurrentSet = Track(new NumberParamViewModel(dev, P.DlCcCurrentSet, "Set Current", "mA", 3, 0.1));
             CcCurrentAct = Track(new ReadoutParamViewModel(dev, P.DlCcCurrentAct, "Actual Current", "mA", ReadoutParamViewModel.Num("F2"), 200));
-            CcCurrentClip = Track(new NumberParamViewModel(dev, P.DlCcCurrentClip, "Maximum Current", "mA", 3, 1.0) {
-                AllowWheel = false,
-                BeforeSet = v => ConfirmClip("마스터", v),
-            });
+            CcCurrentClip = Track(new ReadoutParamViewModel(dev, P.DlCcCurrentClip, "최대 전류 (읽기 전용)", "mA", ReadoutParamViewModel.Num("F3"), 1000));
             CcVoltage = Track(new ReadoutParamViewModel(dev, P.DlCcVoltageAct, "Voltage", "V", ReadoutParamViewModel.Num("F3"), 500));
             CcStatus = Track(new ReadoutParamViewModel(dev, P.DlCcStatusTxt, "Status", null, null, 1000));
 
@@ -70,10 +67,7 @@ namespace DLC_PRO.ViewModels.Pages {
                 CustomSetter = RampAmpCurrent,
             });
             AmpCurrentAct = Track(new ReadoutParamViewModel(dev, P.AmpCcCurrentAct, "Actual Current", "mA", ReadoutParamViewModel.Num("F1"), 200));
-            AmpCurrentClip = Track(new NumberParamViewModel(dev, P.AmpCcCurrentClip, "Maximum Current", "mA", 1, 10) {
-                AllowWheel = false,
-                BeforeSet = v => ConfirmClip("증폭기", v),
-            });
+            AmpCurrentClip = Track(new ReadoutParamViewModel(dev, P.AmpCcCurrentClip, "최대 전류 (읽기 전용)", "mA", ReadoutParamViewModel.Num("F1"), 1000));
             AmpStatus = Track(new ReadoutParamViewModel(dev, P.AmpCcStatusTxt, "Status", null, null, 1000));
 
             // ---------------- TC - Amplifier ----------------
@@ -98,7 +92,7 @@ namespace DLC_PRO.ViewModels.Pages {
         public LedRowViewModel CcEmission { get; }
         public NumberParamViewModel CcCurrentSet { get; }
         public ReadoutParamViewModel CcCurrentAct { get; }
-        public NumberParamViewModel CcCurrentClip { get; }
+        public ReadoutParamViewModel CcCurrentClip { get; }
         public ReadoutParamViewModel CcVoltage { get; }
         public ReadoutParamViewModel CcStatus { get; }
 
@@ -125,7 +119,7 @@ namespace DLC_PRO.ViewModels.Pages {
         public LedRowViewModel AmpEmission { get; }
         public NumberParamViewModel AmpCurrentSet { get; }
         public ReadoutParamViewModel AmpCurrentAct { get; }
-        public NumberParamViewModel AmpCurrentClip { get; }
+        public ReadoutParamViewModel AmpCurrentClip { get; }
         public ReadoutParamViewModel AmpStatus { get; }
 
         public ToggleParamViewModel AmpTcEnable { get; }
@@ -255,11 +249,6 @@ namespace DLC_PRO.ViewModels.Pages {
             }
             return false; // 켜기는 위에서 직접 수행했으므로 토글 자체는 쓰지 않음
         }
-
-        private Task<bool> ConfirmClip(string which, double v) =>
-            _dialogs.ConfirmAsync("최대 전류 변경", string.Format(CultureInfo.InvariantCulture,
-                "{0} 최대 전류(current-clip)를 {1:F1} mA로 바꿉니다.\n레이저/증폭기 사양 범위 안의 값인지 확인하세요.\n\n계속할까요?", which, v),
-                DialogKind.Warning, "변경");
 
         private async Task<bool> ConfirmAmpCurrent(double target) {
             double max = Dev.Safety.EffectiveMaxCurrent;

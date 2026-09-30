@@ -40,8 +40,8 @@ namespace DLC_PRO.ViewModels.Pages {
             PdInput = Track(ChoiceParamViewModel.Channels(dev, P.PdExtInput, "Input Channel", new[] { 0, 1, 2, 4 }));
             PdPhotodiode = Track(new ReadoutParamViewModel(dev, P.PdExtPhotodiode, "Photodiode", "V", ReadoutParamViewModel.Num("F4"), 200));
             PdPower = Track(new ReadoutParamViewModel(dev, P.PdExtPower, "Power", "mW", ReadoutParamViewModel.Num("F3"), 200));
-            PdCalOffset = Track(new NumberParamViewModel(dev, P.PdExtCalOffset, "Cal. Offset", "V", 4, 0.001));
-            PdCalFactor = Track(new NumberParamViewModel(dev, P.PdExtCalFactor, "Cal. Factor", "mW/V", 4, 0.01));
+            PdCalOffset = Track(new ReadoutParamViewModel(dev, P.PdExtCalOffset, "Cal. Offset (읽기 전용)", "V", ReadoutParamViewModel.Num("F4"), 1000));
+            PdCalFactor = Track(new ReadoutParamViewModel(dev, P.PdExtCalFactor, "Cal. Factor (읽기 전용)", "mW/V", ReadoutParamViewModel.Num("F4"), 1000));
 
             _tAct = new TrendBuffer(6000, _clock);
             _tSet = new TrendBuffer(6000, _clock);
@@ -57,7 +57,7 @@ namespace DLC_PRO.ViewModels.Pages {
         }
 
         public override string Title => "Stabilization";
-        public override string Subtitle => "출력 파워 안정화(Power Lock) · 외부 포토다이오드 보정 · 파워 추세";
+        public override string Subtitle => "출력 파워 안정화(Power Lock) · 외부 포토다이오드 보정값 조회 · 파워 추세";
 
         public PlotModel Plot { get; }
 
@@ -80,8 +80,8 @@ namespace DLC_PRO.ViewModels.Pages {
         public ChoiceParamViewModel PdInput { get; }
         public ReadoutParamViewModel PdPhotodiode { get; }
         public ReadoutParamViewModel PdPower { get; }
-        public NumberParamViewModel PdCalOffset { get; }
-        public NumberParamViewModel PdCalFactor { get; }
+        public ReadoutParamViewModel PdCalOffset { get; }
+        public ReadoutParamViewModel PdCalFactor { get; }
 
         protected override void OnTick() {
             DlcDevice d = Dev.Device;

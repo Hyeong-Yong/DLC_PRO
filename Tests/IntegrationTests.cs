@@ -17,7 +17,7 @@ class M{
   int code=d.SetAsync(P.DlCcCurrentSet,95.25).Result; Check(code==0,"param-set ok");
   code=d.SetAsync(P.DlCcCurrentSet,500.0).Result; Check(code==2,"clip warning code 2");
   Check(Math.Abs(d.GetDouble(P.DlCcCurrentSet,0)-106)<1e-6,"cache updated after set to clip value");
-  try{ d.SetAsync(P.DlCcCurrentAct,1.0).Wait(); Check(false,"read-only should fail"); }catch(AggregateException ex){ var de=ex.GetBaseException() as DecofException; Check(de!=null&&de.Code==-11,"read-only error -11: "+ex.GetBaseException().Message); }
+  try{ d.SetAsync(P.DlCcCurrentAct,1.0).Wait(); Check(false,"read-only should fail"); }catch(AggregateException ex){ Check(ex.GetBaseException() is UnauthorizedAccessException,"read-only rejected locally: "+ex.GetBaseException().Message); }
   d.SetAsync(P.DlCcCurrentSet,94.5).Wait();
   int frames=0; ScopeFrame last=null; d.ScopeFrameReceived+=f=>{frames++; last=f;};
   d.ScopeStreaming=true; Thread.Sleep(1200);
@@ -35,7 +35,7 @@ class M{
   Check(last.BackgroundX!=null,"background trace fetched");
   d.ExecAsync(P.CmdLockOpen).Wait(); Thread.Sleep(400);
   Check(d.GetInt(P.LockState,-1)==3,"unlocked → selected");
-  try{ d.ExecAsync("laser1:bogus").Wait(); Check(false,"bogus exec"); }catch(AggregateException ex){ Check(ex.GetBaseException() is DecofException,"exec error parsed: "+ex.GetBaseException().Message); }
+  try{ d.ExecAsync("laser1:bogus").Wait(); Check(false,"bogus exec"); }catch(AggregateException ex){ Check(ex.GetBaseException() is UnauthorizedAccessException,"unknown exec rejected locally: "+ex.GetBaseException().Message); }
   // recorder
   d.SetAsync(P.RecRecordingTime,300.0).Wait(); d.SetAsync(P.RecEnabled,true).Wait(); Thread.Sleep(700);
   var rd=d.RunAsync(cl=>RecorderData.Fetch(cl,null)).Result;
@@ -72,7 +72,7 @@ class M{
   // 줄바꿈이 든 문자열 값은 거부
   try{ d.SetAsync(P.LaserLabel,"a\nb").Wait(); Check(false,"newline string"); }catch(AggregateException ex){ Check(ex.GetBaseException() is ArgumentException,"newline in string rejected"); }
   // await 시 원래 예외 형식 (AggregateException 아님)
-  try{ d.SetAsync(P.DlCcCurrentAct,1.0).GetAwaiter().GetResult(); }catch(Exception ex){ Check(ex is DecofException,"awaited exception type "+ex.GetType().Name); }
+  try{ d.SetAsync(P.DlCcCurrentAct,1.0).GetAwaiter().GetResult(); }catch(Exception ex){ Check(ex is UnauthorizedAccessException,"awaited exception type "+ex.GetType().Name); }
   s.Dispose();
   // 빠른 재접속 반복
   for(int k=0;k<3;k++){ d.Disconnect(); d.ConnectTcp("127.0.0.1", cmdPort, monPort); }

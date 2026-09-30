@@ -51,6 +51,8 @@ internal static class RegressionTests
         try
         {
             if (args.Contains("--ui")) { await UiTests.RunAsync(); return 0; }
+            AccessPolicyTests.Run();
+            if (args.Contains("--access")) return 0;
             var sim = new DlcSim.Sim();
             new Thread(sim.Physics) { IsBackground = true }.Start();
             using var command = Listen(sim.ServeCommand);
@@ -74,7 +76,7 @@ internal static class RegressionTests
             await Reject(() => Task.Run(() => malformed.Floats('x')), "truncated float array rejected");
             using (var client = new DecofClient(new ScriptTransport()))
             using (var device = new DlcDevice())
-                await Reject(() => Task.Run(() => device.SetAndReadBack(client, "test", 1)), "readback failure propagates");
+                await Reject(() => Task.Run(() => device.SetAndReadBack(client, P.DlCcCurrentSet, 1)), "readback failure propagates");
 
             using var d = new DlcDevice();
             using var safety = new AmpSafety(d, new AmpSafetySettings { WatchdogEnabled = false, RampStepMa = 100, RampIntervalMs = 50 });

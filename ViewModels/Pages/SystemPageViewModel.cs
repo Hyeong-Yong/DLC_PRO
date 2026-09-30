@@ -42,7 +42,7 @@ namespace DLC_PRO.ViewModels.Pages {
                     _ => raw,
                 };
             }, 1000));
-            Levels = ChoiceItem.Enum("3=3 normal", "2=2 maintenance", "4=4 read-only");
+            Levels = ChoiceItem.Enum("3=3 normal", "4=4 read-only");
             _selectedLevel = Levels[0];
         }
 

@@ -34,7 +34,7 @@
                         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="변경할 레벨" Margin="0 0 12 0" /><ComboBox Grid.Column="1" Classes="param" ItemsSource="{Binding Levels}" SelectedItem="{Binding SelectedLevel}"><ComboBox.ItemTemplate><DataTemplate DataType="m:ChoiceItem"><TextBlock Text="{Binding Text}" /></DataTemplate></ComboBox.ItemTemplate></ComboBox></Grid>
                         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="비밀번호" Margin="0 0 12 0" /><TextBox Grid.Column="1" PasswordChar="●" Text="{Binding Password}" /></Grid>
                         <IconButton Classes="small" IconText="&#xe2fe;" Content="레벨 변경" Command="{Binding ChangeLevelCommand}" />
-                        <TextBlock Classes="hint" Text="normal(3) 비밀번호 기본값은 빈 문자열입니다. 대부분의 파라미터는 normal에서 읽기 가능합니다." />
+                        <TextBlock Classes="hint" Text="Normal(3) / Read-only(4)만 허용됩니다. Maintenance·Service 권한 상승과 공장·교정값 변경은 잠겨 있습니다." />
                     </StackPanel>
                 </Card>
             </StackPanel>

@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using DLC_PRO.Controls;
 using DLC_PRO.Core;
 using DLC_PRO.Models;
@@ -102,6 +103,23 @@ internal static class UiTests
         Check(main.SelectedLaserId == 2 && main.CurrentPage is LaserPageViewModel, "laser2 row opens laser2 controls");
         var laser2 = (LaserPageViewModel)main.CurrentPage;
         await Task.Delay(250);
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(x => x.Text == "최대 전류 (읽기 전용)") &&
+            !window.GetVisualDescendants().OfType<NumericUpDown>().Any(x => ReferenceEquals(x.DataContext, laser2.CcCurrentClip) || ReferenceEquals(x.DataContext, laser2.AmpCurrentClip)),
+            "maximum current rendered as readouts without numeric editors");
+        window.CaptureRenderedFrame()?.Save(Path.Combine(output,"protected-current-laser2.png"));
+        double originalClip = await dev.Device.ForLaser(2).RunAsync(c => c.GetDouble(P.DlCcCurrentClip));
+        main.GoToConsoleCommand.Execute(null);
+        var console = (ConsolePageViewModel)main.CurrentPage;
+        console.Input = "(param-set! 'laser2:dl:cc:current-clip 999)";
+        await console.SendCommand.ExecuteAsync(null);
+        Check(console.Output.Contains("Console은 읽기 전용") && !rig.Requests.Any(x => x.Contains("(param-set! 'laser2:dl:cc:current-clip")) &&
+            await dev.Device.ForLaser(2).RunAsync(c => c.GetDouble(P.DlCcCurrentClip)) == originalClip, "console write blocked and device current limit unchanged");
+        console.Input = "(param-ref 'laser2:dl:cc:current-clip)";
+        await console.SendCommand.ExecuteAsync(null);
+        Check(rig.Requests.Any(x => x == "(param-ref 'laser2:dl:cc:current-clip)"), "protected current still readable from console");
+        main.GoToSystemCommand.Execute(null);
+        Check(((SystemPageViewModel)main.CurrentPage).Levels.All(x => x.Id is 3 or 4), "privilege selector cannot select maintenance or service");
+        main.GoToLaserCommand.Execute(null);
         laser2.CcCurrentSet.Value = 80.25;
         await WaitFor(() => Math.Abs(dev.Device.ForLaser(2).GetDouble(P.DlCcCurrentSet, 0) - 80.25) < 0.001);
         Check(await dev.Device.RunAsync(c => c.GetDouble(P.DlCcCurrentSet)) != 80.25, "laser2 write leaves laser1 unchanged");
@@ -115,7 +133,15 @@ internal static class UiTests
         Check(rig.Requests.Any(x => x == "(exec 'laser2:dl:lock:find-candidates)"), "laser2 lock command targets laser2");
         window.CaptureRenderedFrame()?.Save(Path.Combine(output,"scanlock-laser2.png"));
         main.GoToStabilizationCommand.Execute(null); await Task.Delay(200);
+        var stabilization = (StabilizationPageViewModel)main.CurrentPage;
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(x => x.Text == "Cal. Factor (읽기 전용)") &&
+            !window.GetVisualDescendants().OfType<NumericUpDown>().Any(x => ReferenceEquals(x.DataContext, stabilization.PdCalFactor) || ReferenceEquals(x.DataContext, stabilization.PdCalOffset)),
+            "photodiode calibration rendered without numeric editors");
         window.CaptureRenderedFrame()?.Save(Path.Combine(output,"stabilization-laser2.png"));
+        var calibrationLabel = window.GetVisualDescendants().OfType<TextBlock>().First(x => x.Text == "Cal. Factor (읽기 전용)");
+        calibrationLabel.BringIntoView();
+        await Task.Delay(100);
+        window.CaptureRenderedFrame()?.Save(Path.Combine(output,"protected-calibration-laser2.png"));
         Check(PlotTypography.FontName.Contains("Gothic", StringComparison.OrdinalIgnoreCase) || PlotTypography.FontName.Contains("고딕"), "Windows Korean font selected");
         using (var typeface = SkiaSharp.SKTypeface.FromFamilyName(PlotTypography.FontName))
         using (var font = new SkiaSharp.SKFont(typeface))

@@ -45,15 +45,16 @@ namespace DLC_PRO.Core
 
         public void Add(string param, int periodMs, double threshold)
         {
+            HardwareAccessPolicy.ValidateName(param);
             string cmd = threshold > 0
                 ? "(add '" + param + " " + periodMs + " " + DecofValue.EncodeDouble(threshold) + ")"
                 : "(add '" + param + " " + periodMs + ")";
             Write(cmd);
         }
 
-        public void Remove(string param) { Write("(remove '" + param + ")"); }
+        public void Remove(string param) { HardwareAccessPolicy.ValidateName(param); Write("(remove '" + param + ")"); }
         public void RemoveAll() { Write("(remove-all)"); }
-        public void ChangeUserLevel(int ul, string password) { Write("(change-ul " + ul + " " + DecofValue.EncodeString(password ?? "") + ")"); }
+        public void ChangeUserLevel(int ul, string password) { HardwareAccessPolicy.ValidateUserLevel(ul); Write("(change-ul " + ul + " " + DecofValue.EncodeString(password ?? "") + ")"); }
 
         private void Write(string cmd)
         {

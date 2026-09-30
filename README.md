@@ -12,6 +12,8 @@ dotnet run --project DLC_PRO.csproj
 
 상단 **AMP OFF / ALL OFF**는 감지된 모든 레이저에 적용됩니다. Laser 페이지 안의 개별 OFF는 선택한 레이저에 적용됩니다. 레이저별 안전 설정과 주파수 변환 설정은 별도 저장하고 통신 설정은 공유합니다.
 
+**장비 보호값은 읽기 전용입니다.** Maximum Current, 공장값, 교정 계수는 변경할 수 없습니다. Console은 단일 조회 명령만 허용하며, Maintenance/Service 권한 상승은 차단됩니다. Settings의 **앱 전류 상한**은 장비 공장값을 바꾸지 않는 소프트웨어 제한입니다. 자세한 범위는 [읽기 전용 보호](Docs/보호값_읽기전용.md)를 참고하세요.
+
 ## 검증
 
 ```powershell

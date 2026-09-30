@@ -10,7 +10,7 @@ using DLC_PRO.Services;
 
 namespace DLC_PRO.ViewModels.Pages {
     /// <summary>
-    /// Console 페이지 — Scheme 명령을 직접 입력 (PuTTY로 1998 포트에 접속한 것과 동일).
+    /// Console 페이지 — 읽기 전용 명령 콘솔. 단일 조회 표현식만 허용.
     /// 예: (param-ref 'laser1:dl:cc:current-act), (param-disp 'laser1:dl:lock)
     /// Settings에서 송수신 로그를 켜면 TX/RX도 여기에 표시된다.
     /// </summary>
@@ -24,12 +24,12 @@ namespace DLC_PRO.ViewModels.Pages {
         public ConsolePageViewModel(DeviceService dev) : base(ApplicationPageNames.Console, dev) {
             for (int i = 0; i < QuickCommands.Count; i++)
                 ((string[])QuickCommands)[i] = QuickCommands[i].Replace("laser1:", "laser" + dev.Device.LaserId + ":", StringComparison.Ordinal);
-            Append("DLC pro 명령 콘솔 — Enter로 전송, ↑/↓ 이력. 예) (param-ref 'laser1:dl:cc:current-act)\n");
+            Append("DLC pro 읽기 전용 콘솔 — 쓰기·권한 변경·복합 명령 차단. Enter로 조회, ↑/↓ 이력. 예) (param-ref 'laser1:dl:cc:current-act)\n");
             dev.Device.Traffic += (d, t) => _traffic.Enqueue("[" + DateTime.Now.ToString("HH:mm:ss.fff") + "] " + d + ": " + t.Replace("\r", "").Replace("\n", " ⏎ "));
         }
 
         public override string Title => "Console";
-        public override string Subtitle => "Laser " + Dev.Device.LaserId + " · 원시 명령의 laser1:/laser2:는 입력한 그대로 전송됩니다.";
+        public override string Subtitle => "Laser " + Dev.Device.LaserId + " · 읽기 전용: param-ref / param-disp / 시스템 메시지 조회만 허용됩니다.";
 
         public IReadOnlyList<string> QuickCommands { get; } = new[] {
             "(param-disp 'laser1:dl)", "(param-disp 'laser1:amp)", "(param-disp 'laser1:dl:lock)",

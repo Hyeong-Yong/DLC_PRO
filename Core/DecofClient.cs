@@ -68,7 +68,14 @@ namespace DLC_PRO.Core
         /// <summary>한 줄 명령을 보내고 프롬프트 직전까지의 응답 전체를 반환.</summary>
         public string Send(string command, int timeoutMs = 3000)
         {
-            if (_owner != null) return _owner.Send(command, timeoutMs);
+            HardwareAccessPolicy.ValidateConsole(command);
+            return SendCore(command, timeoutMs);
+        }
+
+        // Only validated typed operations or read-only console requests reach the transport.
+        private string SendCore(string command, int timeoutMs)
+        {
+            if (_owner != null) return _owner.SendCore(command, timeoutMs);
             lock (_sync)
             {
                 if (_broken) throw new IOException("연결이 끊어졌습니다.");
@@ -147,7 +154,8 @@ namespace DLC_PRO.Core
         public string ParamRef(string name, int timeoutMs = 3000)
         {
             name = Map(name);
-            string resp = Send("(param-ref '" + name + ")", timeoutMs);
+            HardwareAccessPolicy.ValidateName(name);
+            string resp = SendCore("(param-ref '" + name + ")", timeoutMs);
             string last = LastLine(resp);
             if (DecofValue.IsError(last) || DecofValue.IsError(FirstLine(resp)))
                 throw DecofException.FromErrorLine(name, DecofValue.IsError(last) ? last : FirstLine(resp));
@@ -158,8 +166,9 @@ namespace DLC_PRO.Core
         public int ParamSet(string name, object value, int timeoutMs = 3000)
         {
             name = Map(name);
+            HardwareAccessPolicy.ValidateWrite(name, value);
             string enc = DecofValue.Encode(value);
-            string resp = Send("(param-set! '" + name + " " + enc + ")", timeoutMs);
+            string resp = SendCore("(param-set! '" + name + " " + enc + ")", timeoutMs);
             string last = LastLine(resp);
             if (DecofValue.IsError(last)) throw DecofException.FromErrorLine(name, last);
             int code;
@@ -173,11 +182,12 @@ namespace DLC_PRO.Core
         public string Exec(string name, object[] args, int timeoutMs = 10000)
         {
             name = Map(name);
+            HardwareAccessPolicy.ValidateExec(name, args);
             StringBuilder sb = new StringBuilder("(exec '").Append(name);
             if (args != null)
                 foreach (object a in args) sb.Append(' ').Append(DecofValue.Encode(a));
             sb.Append(')');
-            string resp = Send(sb.ToString(), timeoutMs);
+            string resp = SendCore(sb.ToString(), timeoutMs);
             string first = FirstLine(resp), last = LastLine(resp);
             if (DecofValue.IsError(first)) throw DecofException.FromErrorLine(name, first);
             if (DecofValue.IsError(last)) throw DecofException.FromErrorLine(name, last);

@@ -443,7 +443,7 @@ namespace DLC_PRO.Core
             });
         }
 
-        /// <summary>임의 명령 전송 (콘솔용). 응답 원문 반환. 여러 줄이면 공백으로 합친다.</summary>
+        /// <summary>읽기 전용 명령 전송 (콘솔용). 응답 원문 반환. 여러 줄이면 공백으로 합친다.</summary>
         public Task<string> SendRawAsync(string command)
         {
             string one = (command ?? "").Replace("\r", " ").Replace("\n", " ").Trim();

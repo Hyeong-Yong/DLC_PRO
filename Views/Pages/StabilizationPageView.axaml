@@ -43,7 +43,7 @@
                         <ContentControl Content="{Binding PsWindowHyst}" />
                     </StackPanel>
                 </Card>
-                <Card Header="PD EXT (외부 포토다이오드 보정)" IconText="&#xe2dc;">
+                <Card Header="PD EXT (보정값 읽기 전용)" IconText="&#xe2dc;">
                     <StackPanel Spacing="8">
                         <ContentControl Content="{Binding PdInput}" />
                         <ContentControl Content="{Binding PdPhotodiode}" />
