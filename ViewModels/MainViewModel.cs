@@ -100,7 +100,7 @@ namespace DLC_PRO.ViewModels {
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(CanUseLaserControls), nameof(CanUseCurrentPage), nameof(SelectedLaserText))]
         private int _selectedLaserId;
-        public string SelectedLaserText => SelectedLaserId > 0 ? $"Laser {SelectedLaserId} 제어" : "레이저 선택 전";
+        public string SelectedLaserText => SelectedLaserId > 0 ? $"Laser {SelectedLaserId} 제어" : "레이저 비활성화";
         [RelayCommand] private void GoToHardware() => CurrentPage = _hardware;
         [RelayCommand] private void GoToWavemeter() => CurrentPage = _wavemeter;
         private void OpenLaser(int id) {

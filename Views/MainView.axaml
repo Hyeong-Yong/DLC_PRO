@@ -24,9 +24,9 @@
             <Grid RowDefinitions="Auto, *, Auto">
 
                 <!-- 로고 -->
-                <Button Classes="transparent" Padding="4 0 4 18" Command="{Binding SideMenuResizeCommand}" ToolTip.Tip="메뉴 접기/펼치기">
+                <Button Classes="transparent" Padding="4 0 4 18" HorizontalAlignment="Center" Command="{Binding SideMenuResizeCommand}" ToolTip.Tip="메뉴 접기/펼치기">
                     <StackPanel Spacing="0">
-                        <TextBlock Classes="logo" Text="KOPTI" IsVisible="{Binding SideMenuExpanded}" />
+                        <TextBlock Classes="logo" Text="KOPTI" IsVisible="{Binding SideMenuExpanded}" HorizontalAlignment="Center" />
                         <TextBlock Classes="logo" Text="K" IsVisible="{Binding !SideMenuExpanded}" HorizontalAlignment="Center" />
                     </StackPanel>
                 </Button>
@@ -34,15 +34,15 @@
                 <!-- 페이지 메뉴 -->
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Spacing="10">
-                        <IconButton Classes="subtle" IconText="&#xe2a0;" HorizontalAlignment="Stretch" Classes.active="{Binding HardwarePageIsActive}" Command="{Binding GoToHardwareCommand}" ToolTip.Tip="하드웨어 상태">
-                            <Label Content="하드웨어 상태" IsVisible="{Binding SideMenuExpanded}" />
+                        <IconButton Classes="subtle" IconText="&#xe2a0;" HorizontalAlignment="Stretch" Classes.active="{Binding HardwarePageIsActive}" Command="{Binding GoToHardwareCommand}" ToolTip.Tip="ECLD (하드웨어 상태)">
+                            <Label Content="ECLD" IsVisible="{Binding SideMenuExpanded}" />
                         </IconButton>
                         <IconButton Classes="subtle" IconText="&#xe1d6;" HorizontalAlignment="Stretch" Classes.active="{Binding WavemeterPageIsActive}" Command="{Binding GoToWavemeterCommand}" ToolTip.Tip="Wavemeter (HighFinesse WS/6)">
                             <Label Content="Wavemeter" IsVisible="{Binding SideMenuExpanded}" />
                         </IconButton>
                         <TextBlock Text="{Binding SelectedLaserText}" FontWeight="Bold" Margin="4 6" IsVisible="{Binding SideMenuExpanded}" />
-                        <IconButton Classes="subtle" IconText="&#xe2de;" HorizontalAlignment="Stretch" Classes.active="{Binding LaserPageIsActive}" Command="{Binding GoToLaserCommand}" IsEnabled="{Binding CanUseLaserControls}" ToolTip.Tip="Laser">
-                            <Label Content="Laser" IsVisible="{Binding SideMenuExpanded}" />
+                        <IconButton Classes="subtle" IconText="&#xe2de;" HorizontalAlignment="Stretch" Classes.active="{Binding LaserPageIsActive}" Command="{Binding GoToLaserCommand}" IsEnabled="{Binding CanUseLaserControls}" ToolTip.Tip="Control">
+                            <Label Content="Control" IsVisible="{Binding SideMenuExpanded}" />
                         </IconButton>
                         <IconButton Classes="subtle" IconText="&#xe2fa;" HorizontalAlignment="Stretch" Classes.active="{Binding ScanLockPageIsActive}" Command="{Binding GoToScanLockCommand}" IsEnabled="{Binding CanUseLaserControls}" ToolTip.Tip="Scan &amp; Lock">
                             <Label Content="Scan &amp; Lock" IsVisible="{Binding SideMenuExpanded}" />
