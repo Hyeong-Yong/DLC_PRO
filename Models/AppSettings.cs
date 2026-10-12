@@ -38,6 +38,7 @@ namespace DLC_PRO.Models {
 
         public static AppSettings Load(int laserId = 1) {
             AppSettings s = new AppSettings { LaserId = laserId };
+            s.Freq.CoefGHzPerV = FrequencyAxisSettings.DefaultFor(laserId);
             try {
                 string path = File.Exists(s.FilePath) || laserId != 1 ? s.FilePath : LegacyFilePath;
                 if (!File.Exists(path)) return s;
@@ -75,8 +76,11 @@ namespace DLC_PRO.Models {
                 // 설정 파일이 손상되어도 기본값으로 시작
             }
             s.Safety.Sanitize();
-            // 계수 0(미설정·초기화)이면 기본 328 MHz/V
-            if (!s.Freq.HasCoefficient || Math.Abs(s.Freq.CoefGHzPerV) > 1000) s.Freq.CoefGHzPerV = FrequencyAxisSettings.DefaultCoefGHzPerV;
+            // 계수 0(미설정·초기화)이면 레이저별 기본값 (Laser 1: 328 MHz/V, Laser 2 (1470 nm): 492.7 MHz/V)
+            if (!s.Freq.HasCoefficient || Math.Abs(s.Freq.CoefGHzPerV) > 1000) s.Freq.CoefGHzPerV = FrequencyAxisSettings.DefaultFor(laserId);
+            // Laser 2에 예전 공통 기본값(0.328)이 교정 기록 없이 남아 있으면 1470 nm 기본값으로
+            if (laserId == 2 && string.IsNullOrEmpty(s.Freq.CalibratedAt) && Math.Abs(s.Freq.CoefGHzPerV - FrequencyAxisSettings.DefaultCoefGHzPerV) < 1e-12)
+                s.Freq.CoefGHzPerV = FrequencyAxisSettings.Default1470CoefGHzPerV;
             if (s.CmdPort <= 0 || s.CmdPort > 65535) s.CmdPort = 1998;
             if (s.MonPort <= 0 || s.MonPort > 65535) s.MonPort = 1999;
             if (s.ScopeMaxRate < 0.5 || s.ScopeMaxRate > 30) s.ScopeMaxRate = 15;

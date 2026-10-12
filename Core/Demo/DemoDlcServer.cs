@@ -16,13 +16,14 @@ namespace DLC_PRO.Core.Demo
     /// 데모 모드: 레이저 2대가 달린 가상 DLC pro (하드웨어 없이 제어 UI 확인·개발용).
     /// - 루프백(127.0.0.1)의 빈 포트에서만 명령 라인/모니터링 라인을 연다 → 실제 장비·네트워크와 무관
     /// - Laser 1 "TA852": Cs D2 F=4 → F'=3,4,5 편광 분광 스펙트럼 (328 MHz/V)
-    /// - Laser 2 "TA1470": Cs 6P3/2 → 7S1/2 F''=3,4 스펙트럼 (328 MHz/V)
+    /// - Laser 2 "TA1470": Cs 6P3/2 → 7S1/2 F''=3,4 스펙트럼 (492.7 MHz/V)
     /// - laser2: 로 시작하는 요청은 두 번째 시뮬레이터의 laser1: 로 바꿔 전달 (실제 장비의 레이저 2 주소 체계)
     /// </summary>
     public sealed class DemoDlcServer : IDisposable
     {
-        /// <summary>데모 스펙트럼의 튜닝 계수 [MHz/V].</summary>
+        /// <summary>데모 스펙트럼의 튜닝 계수 [MHz/V] (Laser 1 / Laser 2 기본값과 같음).</summary>
         public const double DemoMHzPerV = 328;
+        public const double Demo1470MHzPerV = 492.7;
 
         private readonly DlcSim.Sim _first = new DlcSim.Sim(), _second = new DlcSim.Sim();
         private readonly TcpListener _cmd = new TcpListener(IPAddress.Loopback, 0), _mon = new TcpListener(IPAddress.Loopback, 0);
@@ -89,7 +90,7 @@ namespace DLC_PRO.Core.Demo
         /// <summary>Cs 6P3/2 → 7S1/2 (EIT/OODR 유사): F''=4, F''=3 두 선 + 다른 중간 준위에서 온 작은 선.</summary>
         private static double LadderSpectrum(double x)
         {
-            double f4 = 73.2, k = DemoMHzPerV, g = 12.0 / k;
+            double f4 = 72.5, k = Demo1470MHzPerV, g = 12.0 / k;
             double s = 0.02 * (x - 70) / 5;
             s += Lor(x, f4, g, -0.05, 0.25);
             s += Lor(x, f4 + CalibrationPresets.Cs7S.Lines[0].OffsetMHz / k, g, -0.04, 0.16);

@@ -69,7 +69,11 @@ internal static class CalibrationTests
         AppSettings.FolderOverride = Path.Combine(Path.GetTempPath(), "DLC_PRO-cal-" + Guid.NewGuid().ToString("N"));
         try {
             Directory.CreateDirectory(AppSettings.FolderOverride);
-            Check(Math.Abs(AppSettings.Load(1).Freq.CoefGHzPerV - 0.328) < 1e-12 && Math.Abs(AppSettings.Load(2).Freq.CoefGHzPerV - 0.328) < 1e-12, "fresh settings default to 328 MHz/V for both lasers");
+            Check(Math.Abs(AppSettings.Load(1).Freq.CoefGHzPerV - 0.328) < 1e-12 && Math.Abs(AppSettings.Load(2).Freq.CoefGHzPerV - 0.4927) < 1e-12, "fresh settings default: laser1 328 MHz/V, laser2 (1470 nm) 492.7 MHz/V");
+            File.WriteAllText(Path.Combine(AppSettings.FolderOverride, "settings-laser2.ini"), "Freq.CoefGHzPerV=0.328\n");
+            Check(Math.Abs(AppSettings.Load(2).Freq.CoefGHzPerV - 0.4927) < 1e-12, "laser2 old shared default 0.328 (not calibrated) migrated to 0.4927");
+            File.WriteAllText(Path.Combine(AppSettings.FolderOverride, "settings-laser2.ini"), "Freq.CoefGHzPerV=0\n");
+            Check(Math.Abs(AppSettings.Load(2).Freq.CoefGHzPerV - 0.4927) < 1e-12, "laser2 zero coefficient restored to 0.4927");
             File.WriteAllText(Path.Combine(AppSettings.FolderOverride, "settings.ini"), "Freq.CoefGHzPerV=0\n");
             Check(Math.Abs(AppSettings.Load(1).Freq.CoefGHzPerV - 0.328) < 1e-12, "zero (reset) coefficient restored to 328 MHz/V");
             var s2 = AppSettings.Load(2);

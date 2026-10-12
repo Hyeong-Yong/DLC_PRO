@@ -145,7 +145,7 @@ namespace DLC_PRO.ViewModels {
             CalibrationPreset preset = SelectedPreset;
             double expected = _dev.Settings.Freq.CoefGHzPerV * 1000;
             CalibrationOptions opt = new CalibrationOptions {
-                ExpectedMHzPerV = Math.Abs(expected) > 1 ? expected : FrequencyAxisSettings.DefaultCoefGHzPerV * 1000,
+                ExpectedMHzPerV = Math.Abs(expected) > 1 ? expected : FrequencyAxisSettings.DefaultFor(_dev.Device.LaserId) * 1000,
                 Direction = DirectionIndex == 1 ? 1 : DirectionIndex == 2 ? -1 : 0,
                 ConsistencyTolerance = Math.Clamp(TolerancePercent ?? 3, 0.1, 50) / 100.0,
             };

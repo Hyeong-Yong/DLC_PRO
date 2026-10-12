@@ -12,8 +12,13 @@ namespace DLC_PRO.Core
     {
         /// <summary>그래프 X축을 상대 주파수(MHz)로 표시.</summary>
         public bool ShowFrequency;
-        /// <summary>설정 파일이 없거나 계수가 0(미설정)일 때 쓰는 기본 튜닝 계수 (328 MHz/V, Cs D2 편광 분광 측정값).</summary>
+        /// <summary>설정 파일이 없거나 계수가 0(미설정)일 때 쓰는 기본 튜닝 계수 — Laser 1, 852 nm (328 MHz/V, Cs D2 편광 분광 측정값).</summary>
         public const double DefaultCoefGHzPerV = 0.328;
+        /// <summary>기본 튜닝 계수 — Laser 2, 1470 nm (492.7 MHz/V).</summary>
+        public const double Default1470CoefGHzPerV = 0.4927;
+
+        /// <summary>레이저별 기본 튜닝 계수 [GHz/V] (Laser 2 = 1470 nm).</summary>
+        public static double DefaultFor(int laserId) => laserId == 2 ? Default1470CoefGHzPerV : DefaultCoefGHzPerV;
         /// <summary>피에조 튜닝 계수 (GHz/V). 스캔 스펙트럼 교정 또는 레이저 헤드 사양서 값.
         /// 전압을 올릴 때 주파수가 내려가면 음수.</summary>
         public double CoefGHzPerV = DefaultCoefGHzPerV;

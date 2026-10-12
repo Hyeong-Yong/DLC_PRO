@@ -112,7 +112,7 @@
                                     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" SharedSizeGroup="RowLabel" MinWidth="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" SharedSizeGroup="RowUnit" MinWidth="44" /></Grid.ColumnDefinitions><TextBlock Classes="row-label" Text="기준 전압 (0 MHz)" Margin="0 0 12 0" /><NumericUpDown Grid.Column="1" Classes="compact" FormatString="F4" Increment="0.01" Minimum="-1000" Maximum="1000" Value="{Binding FreqAxis.ZeroVoltage}" IsEnabled="{Binding FreqAxis.UseCustomZero}" /><TextBlock Grid.Column="2" Classes="unit" Text="V" /></Grid>
                                     <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8"><Button Classes="small outline" Content="현재 스캔 중심 → 기준" Command="{Binding FreqAxis.CenterToZeroCommand}" /><Button Classes="small outline" Content="현재 락 포인트 → 기준" Command="{Binding FreqAxis.LockpointToZeroCommand}" IsVisible="{Binding FreqAxis.HasLockpointButton}" /></WrapPanel>
                                     <TextBlock Classes="info" Text="{Binding FreqAxis.Info}" />
-                                    <TextBlock Classes="hint" Text="계수는 피에조 튜닝 계수입니다 (기본 0.328 GHz/V = 328 MHz/V). 아래 교정으로 구하거나 직접 입력하세요. 전압을 올릴 때 주파수가 내려가면 음수입니다. 값은 레이저별로 저장됩니다." />
+                                    <TextBlock Classes="hint" Text="계수는 피에조 튜닝 계수입니다 (기본: Laser 1 0.328 GHz/V, Laser 2 (1470 nm) 0.4927 GHz/V). 아래 교정으로 구하거나 직접 입력하세요. 전압을 올릴 때 주파수가 내려가면 음수입니다. 값은 레이저별로 저장됩니다." />
                                 </StackPanel>
                             </Card>
                             <vc:TuningCalibrationView DataContext="{Binding Calibration}" />
